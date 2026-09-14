@@ -1,8 +1,19 @@
 package cl.mapuescuela;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+
+@Entity
+@Table(name = "pedido")
 public class Pedido {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
+
     private String cliente;
     private String producto;
     private String modalidadEntrega;
@@ -11,9 +22,7 @@ public class Pedido {
     public Pedido() {
     }
 
-    public Pedido(int id, String cliente, String producto,
-                  String modalidadEntrega, String estado) {
-        this.id = id;
+    public Pedido(String cliente, String producto, String modalidadEntrega, String estado) {
         this.cliente = cliente;
         this.producto = producto;
         this.modalidadEntrega = modalidadEntrega;

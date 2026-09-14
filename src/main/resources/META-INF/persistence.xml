@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence"
+             version="3.0">
+
+    <persistence-unit name="MapuescuelaPU" transaction-type="JTA">
+
+        <jta-data-source>jdbc/MapuescuelaDS</jta-data-source>
+
+        <class>cl.mapuescuela.Pedido</class>
+
+        <properties>
+
+            <property name="eclipselink.ddl-generation"
+                      value="create-or-extend-tables"/>
+
+            <property name="eclipselink.logging.level"
+                      value="INFO"/>
+
+        </properties>
+
+    </persistence-unit>
+
+</persistence>

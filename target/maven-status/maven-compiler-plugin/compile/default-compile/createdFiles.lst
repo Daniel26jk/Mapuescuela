@@ -1,7 +1,0 @@
-cl\mapuescuela\PedidoResource.class
-cl\mapuescuela\Pedido.class
-cl\mapuescuela\FlowableGenerarPedidoWorker.class
-cl\mapuescuela\ActualizarEstadoPedidoWorker.class
-cl\mapuescuela\MyResource.class
-cl\mapuescuela\ConsultarPedidoWorker.class
-cl\mapuescuela\GenerarPedidoWorker.class
