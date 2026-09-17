@@ -10,7 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class FlowableGenerarPedidoWorker {
+public class FlowableEstadoPedidoWorker {
 
     private static final String FLOWABLE_URL =
             "https://iplacex.cloud.flowable.com/sandbox/external-job-api";
@@ -18,42 +18,49 @@ public class FlowableGenerarPedidoWorker {
     private static final String TOKEN =
             "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJmbG93YWJsZS1odWIiLCJzdWIiOiIwODU1NzQ0Yi04ZjhiLTExZjEtOTQxMy0yZTg3Yzc5MWY3OTEiLCJleHAiOjE3OTA4MjI2MjEsImlhdCI6MTc4ODIzMDYyMSwianRpIjoiZjE0MDk1M2EtYTVhZS0xMWYxLWJiMGEtZGFlZGZhM2EyY2NiIn0.LzReXvReMbxWgfkVh19JAdLfBE1HOVrIL3CBCYs61Ow";
 
-    private static final String TOPIC =
-            "generar-pedido";
-
     private static final String WORKER_ID =
             "mapuescuela-java-worker";
 
     public static void main(String[] args) {
 
+        if (args.length < 2) {
+            System.out.println(
+                    "Uso: FlowableEstadoPedidoWorker <topic> <estado>"
+            );
+            return;
+        }
+
+        String topic = args[0];
+        String nuevoEstado = args[1];
+
         System.out.println("======================================");
-        System.out.println(" Mapuescuela - External Worker");
-        System.out.println(" Topic: " + TOPIC);
-        System.out.println(" Worker ID: " + WORKER_ID);
+        System.out.println(" Mapuescuela - Worker Estado");
+        System.out.println(" Topic: " + topic);
+        System.out.println(" Estado: " + nuevoEstado);
         System.out.println("======================================");
 
         try {
-
-            adquirirYProcesarTrabajo();
-
+            procesarTrabajo(topic, nuevoEstado);
         } catch (Exception e) {
-
-            System.out.println("Error ejecutando el Worker:");
+            System.out.println("Error ejecutando Worker:");
             e.printStackTrace();
         }
     }
 
-    private static void adquirirYProcesarTrabajo()
+    private static void procesarTrabajo(
+            String topic,
+            String nuevoEstado)
             throws Exception {
 
-        String respuestaFlowable = adquirirTrabajo();
+        String respuesta =
+                adquirirTrabajo(topic);
 
-        if (respuestaFlowable == null
-                || respuestaFlowable.trim().isEmpty()
-                || respuestaFlowable.trim().equals("[]")) {
+        if (respuesta == null
+                || respuesta.trim().isEmpty()
+                || respuesta.trim().equals("[]")) {
 
             System.out.println(
-                    "No existen trabajos generar-pedido pendientes."
+                    "No existen trabajos pendientes para: " + topic
             );
 
             return;
@@ -61,26 +68,14 @@ public class FlowableGenerarPedidoWorker {
 
         String jobId =
                 extraerCampoString(
-                        respuestaFlowable,
+                        respuesta,
                         "id"
                 );
 
-        String cliente =
-                extraerVariable(
-                        respuestaFlowable,
-                        "cliente"
-                );
-
-        String producto =
-                extraerVariable(
-                        respuestaFlowable,
-                        "producto"
-                );
-
-        String modalidadEntrega =
-                extraerVariable(
-                        respuestaFlowable,
-                        "modalidadEntrega"
+        Integer pedidoId =
+                extraerVariableEntera(
+                        respuesta,
+                        "pedidoId"
                 );
 
         if (jobId == null) {
@@ -89,95 +84,46 @@ public class FlowableGenerarPedidoWorker {
             );
         }
 
-        if (cliente == null
-                || producto == null
-                || modalidadEntrega == null) {
-
-            throw new Exception(
-                    "No se pudieron obtener las variables del proceso."
-            );
-        }
-
-        System.out.println();
-        System.out.println("Trabajo encontrado en Flowable.");
-        System.out.println("Job ID: " + jobId);
-        System.out.println("Cliente: " + cliente);
-        System.out.println("Producto: " + producto);
-        System.out.println("Modalidad: " + modalidadEntrega);
-
-        GenerarPedidoWorker.ResultadoPedido resultado =
-                GenerarPedidoWorker.generarPedidoConRespuesta(
-                        cliente,
-                        producto,
-                        modalidadEntrega
-                );
-
-        int codigoApi =
-                resultado.getCodigoHttp();
-
-        if (codigoApi < 200 || codigoApi >= 300) {
-
-            throw new Exception(
-                    "Mapuescuela API no pudo crear el pedido. HTTP "
-                            + codigoApi
-            );
-        }
-
-        String jsonPedido =
-                resultado.getRespuestaJson();
-
-        Integer pedidoId =
-                extraerCampoEntero(
-                        jsonPedido,
-                        "id"
-                );
-
-        String estadoPedido =
-                extraerCampoString(
-                        jsonPedido,
-                        "estado"
-                );
-
         if (pedidoId == null) {
-
             throw new Exception(
-                    "La API no devolvio el ID del pedido."
+                    "No se pudo obtener pedidoId desde Flowable."
             );
         }
 
-        if (estadoPedido == null) {
-
-            throw new Exception(
-                    "La API no devolvio el estado del pedido."
-            );
-        }
-
-        System.out.println();
-        System.out.println("Pedido creado correctamente.");
+        System.out.println("Job ID: " + jobId);
         System.out.println("Pedido ID: " + pedidoId);
-        System.out.println("Estado: " + estadoPedido);
+
+        int codigo =
+                ActualizarEstadoPedidoWorker.actualizarEstado(
+                        pedidoId,
+                        nuevoEstado
+                );
+
+        if (codigo < 200 || codigo >= 300) {
+            throw new Exception(
+                    "No se pudo actualizar el pedido. HTTP " + codigo
+            );
+        }
 
         completarTrabajo(
                 jobId,
-                pedidoId,
-                estadoPedido
+                nuevoEstado
         );
 
-        System.out.println();
         System.out.println("======================================");
-        System.out.println(" WORKER COMPLETADO CORRECTAMENTE");
-        System.out.println(" Pedido ID: " + pedidoId);
-        System.out.println(" Estado: " + estadoPedido);
+        System.out.println(" WORKER COMPLETADO");
+        System.out.println(" Pedido: " + pedidoId);
+        System.out.println(" Estado: " + nuevoEstado);
         System.out.println("======================================");
     }
 
-    private static String adquirirTrabajo()
+    private static String adquirirTrabajo(
+            String topic)
             throws Exception {
 
         URL url =
                 new URL(
-                        FLOWABLE_URL
-                                + "/acquire/jobs"
+                        FLOWABLE_URL + "/acquire/jobs"
                 );
 
         HttpURLConnection conexion =
@@ -203,7 +149,7 @@ public class FlowableGenerarPedidoWorker {
         conexion.setDoOutput(true);
 
         String json = "{"
-                + "\"topic\":\"" + TOPIC + "\","
+                + "\"topic\":\"" + topic + "\","
                 + "\"workerId\":\"" + WORKER_ID + "\","
                 + "\"lockDuration\":\"PT5M\","
                 + "\"numberOfTasks\":1,"
@@ -241,7 +187,6 @@ public class FlowableGenerarPedidoWorker {
         );
 
         if (codigo < 200 || codigo >= 300) {
-
             throw new Exception(
                     "Error Flowable HTTP "
                             + codigo
@@ -255,8 +200,7 @@ public class FlowableGenerarPedidoWorker {
 
     private static void completarTrabajo(
             String jobId,
-            int pedidoId,
-            String estadoPedido)
+            String nuevoEstado)
             throws Exception {
 
         URL url =
@@ -295,16 +239,10 @@ public class FlowableGenerarPedidoWorker {
                 + "\","
                 + "\"variables\":["
                 + "{"
-                + "\"name\":\"pedidoId\","
-                + "\"type\":\"integer\","
-                + "\"value\":"
-                + pedidoId
-                + "},"
-                + "{"
                 + "\"name\":\"estadoPedido\","
                 + "\"type\":\"string\","
                 + "\"value\":\""
-                + escaparJson(estadoPedido)
+                + nuevoEstado
                 + "\""
                 + "}"
                 + "]"
@@ -337,9 +275,8 @@ public class FlowableGenerarPedidoWorker {
         conexion.disconnect();
 
         if (codigo < 200 || codigo >= 300) {
-
             throw new Exception(
-                    "No fue posible completar el job. HTTP "
+                    "No se pudo completar el job. HTTP "
                             + codigo
                             + ": "
                             + respuesta
@@ -351,6 +288,31 @@ public class FlowableGenerarPedidoWorker {
         );
     }
 
+    private static Integer extraerVariableEntera(
+            String json,
+            String nombreVariable) {
+
+        Pattern patron =
+                Pattern.compile(
+                        "\"name\"\\s*:\\s*\""
+                                + Pattern.quote(nombreVariable)
+                                + "\".*?"
+                                + "\"value\"\\s*:\\s*(\\d+)",
+                        Pattern.DOTALL
+                );
+
+        Matcher matcher =
+                patron.matcher(json);
+
+        if (matcher.find()) {
+            return Integer.parseInt(
+                    matcher.group(1)
+            );
+        }
+
+        return null;
+    }
+
     private static String extraerCampoString(
             String json,
             String campo) {
@@ -360,56 +322,6 @@ public class FlowableGenerarPedidoWorker {
                         "\""
                                 + Pattern.quote(campo)
                                 + "\"\\s*:\\s*\"([^\"]*)\""
-                );
-
-        Matcher matcher =
-                patron.matcher(json);
-
-        if (matcher.find()) {
-            return matcher.group(1);
-        }
-
-        return null;
-    }
-
-    private static Integer extraerCampoEntero(
-            String json,
-            String campo) {
-
-        Pattern patron =
-                Pattern.compile(
-                        "\""
-                                + Pattern.quote(campo)
-                                + "\"\\s*:\\s*(\\d+)"
-                );
-
-        Matcher matcher =
-                patron.matcher(json);
-
-        if (matcher.find()) {
-
-            return Integer.parseInt(
-                    matcher.group(1)
-            );
-        }
-
-        return null;
-    }
-
-    private static String extraerVariable(
-            String json,
-            String nombreVariable) {
-
-        Pattern patron =
-                Pattern.compile(
-                        "\"name\"\\s*:\\s*\""
-                                + Pattern.quote(nombreVariable)
-                                + "\""
-                                + "\\s*,\\s*"
-                                + "\"type\"\\s*:\\s*\"[^\"]*\""
-                                + "\\s*,\\s*"
-                                + "\"value\"\\s*:\\s*\"([^\"]*)\"",
-                        Pattern.DOTALL
                 );
 
         Matcher matcher =
@@ -449,19 +361,5 @@ public class FlowableGenerarPedidoWorker {
         lector.close();
 
         return respuesta.toString();
-    }
-
-    private static String escaparJson(
-            String texto) {
-
-        if (texto == null) {
-            return "";
-        }
-
-        return texto
-                .replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r");
     }
 }
