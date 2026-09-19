@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Mapuescuela | Realizar compra</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+</head>
+
+<body>
+
+    <aside class="estandarte estandarte-izquierdo">
+        <div class="estandarte-negro"></div>
+        <div class="estandarte-azul"></div>
+        <div class="estandarte-verde"></div>
+        <div class="estandarte-rojo"></div>
+        <div class="estandarte-negro"></div>
+    </aside>
+
+    <aside class="estandarte estandarte-derecho">
+        <div class="estandarte-negro"></div>
+        <div class="estandarte-azul"></div>
+        <div class="estandarte-verde"></div>
+        <div class="estandarte-rojo"></div>
+        <div class="estandarte-negro"></div>
+    </aside>
+
+    <header class="encabezado">
+
+        <div class="franja-colores">
+            <span class="color-negro"></span>
+            <span class="color-azul"></span>
+            <span class="color-verde"></span>
+            <span class="color-rojo"></span>
+        </div>
+
+        <div class="encabezado-contenido">
+
+            <div class="marca">
+
+                <img
+                    src="img/logo-mapuescuela.png"
+                    alt="Logo Mapuescuela"
+                    class="logo-mapuescuela"
+                >
+
+                <div class="marca-texto">
+
+                    <h1>
+                        Mapuescuela
+                    </h1>
+
+                    <p>
+                        Compra de productos
+                    </p>
+
+                </div>
+
+            </div>
+
+            <div class="estado-sistema">
+
+                <span class="punto-online"></span>
+
+                Tienda disponible
+
+            </div>
+
+        </div>
+
+    </header>
+
+    <main class="contenedor">
+
+        <section class="bienvenida">
+
+            <div>
+
+                <p class="etiqueta-superior">
+                    TIENDA MAPUESCUELA
+                </p>
+
+                <h2>
+                    Realiza tu pedido
+                </h2>
+
+                <p>
+                    Busca un producto, selecciónalo y registra
+                    tu compra.
+                </p>
+
+            </div>
+
+        </section>
+
+        <!-- PRODUCTOS -->
+
+        <section class="panel">
+
+            <div class="panel-titulo">
+
+                <div>
+
+                    <span class="numero-seccion">
+                        01
+                    </span>
+
+                    <div>
+
+                        <h3>
+                            Productos disponibles
+                        </h3>
+
+                        <p>
+                            Busca por nombre y selecciona
+                            el producto que deseas comprar.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="buscador">
+
+                <span>
+                    ⌕
+                </span>
+
+                <input
+                    type="text"
+                    id="buscarProducto"
+                    placeholder="Buscar producto por nombre..."
+                >
+
+            </div>
+
+            <div
+                id="listaProductos"
+                class="productos-cliente"
+            >
+
+                <p class="cargando">
+                    Cargando productos...
+                </p>
+
+            </div>
+
+        </section>
+
+        <!-- CREAR PEDIDO -->
+
+        <section class="panel">
+
+            <div class="panel-titulo">
+
+                <div>
+
+                    <span class="numero-seccion">
+                        02
+                    </span>
+
+                    <div>
+
+                        <h3>
+                            Datos del pedido
+                        </h3>
+
+                        <p>
+                            Completa la información para
+                            registrar tu compra.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <form id="formPedidoCliente">
+
+                <div class="formulario-grid">
+
+                    <div class="campo">
+
+                        <label for="cliente">
+                            Nombre del comprador
+                        </label>
+
+                        <input
+                            type="text"
+                            id="cliente"
+                            placeholder="Ej: María González"
+                            required
+                        >
+
+                    </div>
+
+                    <div class="campo">
+
+                        <label for="productoSeleccionado">
+                            Producto seleccionado
+                        </label>
+
+                        <input
+                            type="text"
+                            id="productoSeleccionado"
+                            placeholder="Selecciona un producto"
+                            readonly
+                            required
+                        >
+
+                        <input
+                            type="hidden"
+                            id="productoId"
+                        >
+
+                    </div>
+
+                    <div class="campo">
+
+                        <label for="cantidad">
+                            Cantidad
+                        </label>
+
+                        <input
+                            type="number"
+                            id="cantidad"
+                            min="1"
+                            value="1"
+                            required
+                        >
+
+                    </div>
+
+                    <div class="campo">
+
+                        <label for="modalidadEntrega">
+                            Modalidad de entrega
+                        </label>
+
+                        <select
+                            id="modalidadEntrega"
+                            required
+                        >
+
+                            <option value="">
+                                Selecciona una opción
+                            </option>
+
+                            <option value="RETIRO">
+                                Retiro
+                            </option>
+
+                            <option value="DESPACHO">
+                                Despacho
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+                <div
+                    id="detalleProducto"
+                    class="detalle-producto-cliente"
+                ></div>
+
+                <div class="acciones-formulario">
+
+                    <button
+                        type="submit"
+                        class="boton-principal"
+                    >
+                        Crear pedido
+                    </button>
+
+                </div>
+
+            </form>
+
+            <div
+                id="mensajeCliente"
+                class="mensaje"
+            ></div>
+
+        </section>
+
+        <!-- RESULTADO DEL PEDIDO -->
+
+        <section
+            id="resultadoPedido"
+            class="panel"
+            style="display: none;"
+        >
+
+            <div class="panel-titulo">
+
+                <div>
+
+                    <span class="numero-seccion">
+                        03
+                    </span>
+
+                    <div>
+
+                        <h3>
+                            Pedido registrado
+                        </h3>
+
+                        <p>
+                            Guarda tu código para consultar
+                            fácilmente el estado de la compra.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="resultado-cliente">
+
+                <div>
+
+                    <p>
+                        Código del pedido
+                    </p>
+
+                    <strong id="codigoPedidoCliente">
+                        -
+                    </strong>
+
+                </div>
+
+                <div>
+
+                    <p>
+                        Estado
+                    </p>
+
+                    <strong id="estadoPedidoCliente">
+                        -
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- CONSULTAR PEDIDOS -->
+
+        <section class="panel">
+
+            <div class="panel-titulo">
+
+                <div>
+
+                    <span class="numero-seccion">
+                        04
+                    </span>
+
+                    <div>
+
+                        <h3>
+                            Consultar mis pedidos
+                        </h3>
+
+                        <p>
+                            Puedes buscar utilizando el nombre
+                            del comprador o el código del pedido.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <form id="formConsultarPedido">
+
+                <div class="campo">
+
+                    <label for="consultaPedido">
+                        Nombre o código del pedido
+                    </label>
+
+                    <input
+                        type="text"
+                        id="consultaPedido"
+                        placeholder="Ej: María González o MARIA-000008"
+                        required
+                    >
+
+                </div>
+
+                <div class="acciones-formulario">
+
+                    <button
+                        type="submit"
+                        class="boton-principal"
+                    >
+                        Buscar pedidos
+                    </button>
+
+                </div>
+
+            </form>
+
+            <div
+                id="mensajeConsulta"
+                class="mensaje"
+            ></div>
+
+            <div
+                id="listaPedidosCliente"
+                class="productos-cliente"
+            ></div>
+
+        </section>
+
+    </main>
+
+    <script src="app-cliente.js"></script>
+
+</body>
+
+</html>

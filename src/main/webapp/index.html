@@ -9,7 +9,7 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Mapuescuela | Gestión de Pedidos</title>
+    <title>Mapuescuela</title>
 
     <link
         rel="stylesheet"
@@ -17,8 +17,7 @@
     >
 </head>
 
-
-<body>
+<body class="pagina-inicio">
 
     <aside class="estandarte estandarte-izquierdo">
         <div class="estandarte-negro"></div>
@@ -28,7 +27,6 @@
         <div class="estandarte-negro"></div>
     </aside>
 
-
     <aside class="estandarte estandarte-derecho">
         <div class="estandarte-negro"></div>
         <div class="estandarte-azul"></div>
@@ -37,18 +35,14 @@
         <div class="estandarte-negro"></div>
     </aside>
 
+
     <header class="encabezado">
 
         <div class="franja-colores">
-
             <span class="color-negro"></span>
-
             <span class="color-azul"></span>
-
             <span class="color-verde"></span>
-
             <span class="color-rojo"></span>
-
         </div>
 
 
@@ -62,7 +56,6 @@
                     class="logo-mapuescuela"
                 >
 
-
                 <div class="marca-texto">
 
                     <h1>
@@ -70,19 +63,18 @@
                     </h1>
 
                     <p>
-                        Gestión de pedidos
+                        Educa-acción para el buen vivir
                     </p>
 
                 </div>
 
             </div>
 
-
             <div class="estado-sistema">
 
                 <span class="punto-online"></span>
 
-                Sistema activo
+                Sistema disponible
 
             </div>
 
@@ -90,330 +82,145 @@
 
     </header>
 
-    <main class="contenedor">
 
-        <section class="bienvenida">
+    <main class="contenedor inicio-contenedor">
 
-            <div>
+        <section class="inicio-presentacion">
 
-                <p class="etiqueta-superior">
-                    PANEL DE ADMINISTRACIÓN
-                </p>
+            <p class="etiqueta-superior">
+                BIENVENIDO A MAPUESCUELA
+            </p>
 
+            <h2>
+                ¿Qué deseas realizar?
+            </h2>
 
-                <h2>
-                    Gestión de pedidos
-                </h2>
-
-
-                <p>
-                    Registra, consulta y actualiza los pedidos
-                    de Mapuescuela desde un solo lugar.
-                </p>
-
-            </div>
+            <p class="inicio-descripcion">
+                Accede a la tienda para realizar una compra
+                o ingresa al panel de administración para
+                gestionar productos, inventario y pedidos.
+            </p>
 
         </section>
 
-        <section class="resumen">
 
+        <section class="opciones-inicio">
 
-            <article class="tarjeta-resumen">
+            <!-- COMPRAS -->
 
-                <span class="icono-resumen">
-                    📦
-                </span>
+            <a
+                href="cliente.html"
+                class="tarjeta-acceso"
+            >
 
-                <div>
-
-                    <p>
-                        Total pedidos
-                    </p>
-
-                    <strong id="totalPedidos">
-                        0
-                    </strong>
-
+                <div class="icono-acceso">
+                    🛒
                 </div>
 
-            </article>
+                <div class="contenido-acceso">
 
-
-            <article class="tarjeta-resumen">
-
-                <span class="icono-resumen">
-                    ⏳
-                </span>
-
-                <div>
-
-                    <p>
-                        Pendientes
-                    </p>
-
-                    <strong id="totalPendientes">
-                        0
-                    </strong>
-
-                </div>
-
-            </article>
-
-
-            <article class="tarjeta-resumen">
-
-                <span class="icono-resumen">
-                    ✓
-                </span>
-
-                <div>
-
-                    <p>
-                        Pagados
-                    </p>
-
-                    <strong id="totalPagados">
-                        0
-                    </strong>
-
-                </div>
-
-            </article>
-
-        </section>
-
-        <section class="panel">
-
-            <div class="panel-titulo">
-
-                <div>
-
-                    <span class="numero-seccion">
+                    <span class="numero-acceso">
                         01
                     </span>
 
+                    <h3>
+                        Realizar una compra
+                    </h3>
 
-                    <div>
+                    <p>
+                        Consulta los productos disponibles,
+                        selecciona una cantidad y registra
+                        tu pedido.
+                    </p>
 
-                        <h3>
-                            Nuevo pedido
-                        </h3>
-
-                        <p>
-                            Ingresa los datos principales de la solicitud.
-                        </p>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-
-            <form id="formPedido">
-
-                <div class="formulario-grid">
-
-
-                    <div class="campo">
-
-                        <label for="cliente">
-                            Nombre del cliente
-                        </label>
-
-                        <input
-                            type="text"
-                            id="cliente"
-                            placeholder="Ej: María González"
-                            required
-                        >
-
-                    </div>
-
-
-                    <div class="campo">
-
-                        <label for="producto">
-                            Producto
-                        </label>
-
-                        <input
-                            type="text"
-                            id="producto"
-                            placeholder="Ej: Material educativo"
-                            required
-                        >
-
-                    </div>
-
-
-                    <div class="campo">
-
-                        <label for="modalidadEntrega">
-                            Modalidad de entrega
-                        </label>
-
-                        <select
-                            id="modalidadEntrega"
-                            required
-                        >
-
-                            <option value="">
-                                Seleccione una opción
-                            </option>
-
-                            <option value="RETIRO">
-                                Retiro
-                            </option>
-
-                            <option value="DESPACHO">
-                                Despacho
-                            </option>
-
-                        </select>
-
-                    </div>
+                    <span class="enlace-acceso">
+                        Ir a la tienda →
+                    </span>
 
                 </div>
 
+            </a>
 
-                <div class="acciones-formulario">
 
-                    <button
-                        type="submit"
-                        class="boton boton-principal"
-                    >
+            <!-- ADMINISTRACIÓN -->
 
-                        + Crear pedido
+            <a
+                href="administrador.html"
+                class="tarjeta-acceso"
+            >
 
-                    </button>
-
+                <div class="icono-acceso">
+                    ⚙️
                 </div>
 
-            </form>
+                <div class="contenido-acceso">
 
-
-            <div
-                id="mensaje"
-                class="mensaje"
-            ></div>
-
-        </section>
-
-        <section class="panel">
-
-            <div class="panel-titulo panel-titulo-listado">
-
-
-                <div>
-
-                    <span class="numero-seccion">
+                    <span class="numero-acceso">
                         02
                     </span>
 
+                    <h3>
+                        Administración
+                    </h3>
 
-                    <div>
+                    <p>
+                        Gestiona el catálogo de productos,
+                        inventario y seguimiento de pedidos.
+                    </p>
 
-                        <h3>
-                            Pedidos registrados
-                        </h3>
-
-                        <p>
-                            Consulta y administra el estado de cada pedido.
-                        </p>
-
-                    </div>
+                    <span class="enlace-acceso">
+                        Ir a administración →
+                    </span>
 
                 </div>
 
+            </a>
 
-                <button
-                    type="button"
-                    id="btnActualizar"
-                    class="boton boton-secundario"
-                >
-
-                    ↻ Actualizar
-
-                </button>
-
-            </div>
+        </section>
 
 
-            <div class="buscador">
+        <section class="inicio-informacion">
+
+            <div>
+
+                <strong>
+                    Compra
+                </strong>
 
                 <span>
-                    ⌕
+                    Productos disponibles y seguimiento de pedidos
                 </span>
-
-                <input
-                    type="text"
-                    id="buscarPedido"
-                    placeholder="Buscar por cliente, producto, estado o ID..."
-                >
 
             </div>
 
-            <div class="tabla-contenedor">
+            <div>
 
-                <table>
+                <strong>
+                    Inventario
+                </strong>
 
-                    <thead>
+                <span>
+                    Control de productos y stock
+                </span>
 
-                        <tr>
+            </div>
 
-                            <th>
-                                ID
-                            </th>
+            <div>
 
-                            <th>
-                                Cliente
-                            </th>
+                <strong>
+                    Pedidos
+                </strong>
 
-                            <th>
-                                Producto
-                            </th>
-
-                            <th>
-                                Entrega
-                            </th>
-
-                            <th>
-                                Estado
-                            </th>
-
-                            <th>
-                                Gestión
-                            </th>
-
-                        </tr>
-
-                    </thead>
-
-
-                    <tbody id="tablaPedidos">
-
-                        <tr>
-
-                            <td
-                                colspan="6"
-                                class="cargando"
-                            >
-                                Cargando pedidos...
-                            </td>
-
-                        </tr>
-
-                    </tbody>
-
-                </table>
+                <span>
+                    Gestión y seguimiento de estados
+                </span>
 
             </div>
 
         </section>
 
-
     </main>
+
 
     <footer>
 
@@ -426,9 +233,6 @@
         </span>
 
     </footer>
-
-
-    <script src="app.js"></script>
 
 </body>
 

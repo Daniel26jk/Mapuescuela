@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Mapuescuela | Administración</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+</head>
+
+<body>
+
+    <aside class="estandarte estandarte-izquierdo">
+        <div class="estandarte-negro"></div>
+        <div class="estandarte-azul"></div>
+        <div class="estandarte-verde"></div>
+        <div class="estandarte-rojo"></div>
+        <div class="estandarte-negro"></div>
+    </aside>
+
+    <aside class="estandarte estandarte-derecho">
+        <div class="estandarte-negro"></div>
+        <div class="estandarte-azul"></div>
+        <div class="estandarte-verde"></div>
+        <div class="estandarte-rojo"></div>
+        <div class="estandarte-negro"></div>
+    </aside>
+
+    <header class="encabezado">
+
+        <div class="franja-colores">
+            <span class="color-negro"></span>
+            <span class="color-azul"></span>
+            <span class="color-verde"></span>
+            <span class="color-rojo"></span>
+        </div>
+
+        <div class="encabezado-contenido">
+
+            <div class="marca">
+
+                <img
+                    src="img/logo-mapuescuela.png"
+                    alt="Logo Mapuescuela"
+                    class="logo-mapuescuela"
+                >
+
+                <div class="marca-texto">
+
+                    <h1>
+                        Mapuescuela
+                    </h1>
+
+                    <p>
+                        Panel de administración
+                    </p>
+
+                </div>
+
+            </div>
+
+            <div class="estado-sistema">
+
+                <span class="punto-online"></span>
+
+                Sistema activo
+
+            </div>
+
+        </div>
+
+    </header>
+
+    <main class="contenedor">
+
+        <section class="bienvenida">
+
+            <div>
+
+                <p class="etiqueta-superior">
+                    PANEL DE ADMINISTRACIÓN
+                </p>
+
+                <h2>
+                    Gestión de Mapuescuela
+                </h2>
+
+                <p>
+                    Administra productos, inventario
+                    y el seguimiento de los pedidos.
+                </p>
+
+            </div>
+
+        </section>
+
+
+        <!-- RESUMEN -->
+
+        <section class="resumen">
+
+            <article class="tarjeta-resumen">
+
+                <span class="icono-resumen">
+                    📦
+                </span>
+
+                <div>
+
+                    <p>
+                        Pedidos activos
+                    </p>
+
+                    <strong id="totalActivos">
+                        0
+                    </strong>
+
+                </div>
+
+            </article>
+
+
+            <article class="tarjeta-resumen">
+
+                <span class="icono-resumen">
+                    ✓
+                </span>
+
+                <div>
+
+                    <p>
+                        Completados
+                    </p>
+
+                    <strong id="totalCompletados">
+                        0
+                    </strong>
+
+                </div>
+
+            </article>
+
+
+            <article class="tarjeta-resumen">
+
+                <span class="icono-resumen">
+                    ✕
+                </span>
+
+                <div>
+
+                    <p>
+                        Cancelados / rechazados
+                    </p>
+
+                    <strong id="totalCancelados">
+                        0
+                    </strong>
+
+                </div>
+
+            </article>
+
+
+            <article class="tarjeta-resumen">
+
+                <span class="icono-resumen">
+                    🛒
+                </span>
+
+                <div>
+
+                    <p>
+                        Productos activos
+                    </p>
+
+                    <strong id="totalProductosActivos">
+                        0
+                    </strong>
+
+                </div>
+
+            </article>
+
+        </section>
+
+
+        <!-- PRODUCTOS -->
+
+        <section class="panel">
+
+            <div class="panel-titulo">
+
+                <div>
+
+                    <span class="numero-seccion">
+                        01
+                    </span>
+
+                    <div>
+
+                        <h3>
+                            Productos e inventario
+                        </h3>
+
+                        <p>
+                            Agrega productos y administra
+                            precio, descripción y stock.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <form id="formProducto">
+
+                <div class="formulario-grid">
+
+                    <div class="campo">
+
+                        <label for="nombreProducto">
+                            Nombre
+                        </label>
+
+                        <input
+                            type="text"
+                            id="nombreProducto"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="campo">
+
+                        <label for="descripcionProducto">
+                            Descripción
+                        </label>
+
+                        <input
+                            type="text"
+                            id="descripcionProducto"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="campo">
+
+                        <label for="precioProducto">
+                            Precio
+                        </label>
+
+                        <input
+                            type="number"
+                            id="precioProducto"
+                            min="0"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="campo">
+
+                        <label for="stockProducto">
+                            Stock
+                        </label>
+
+                        <input
+                            type="number"
+                            id="stockProducto"
+                            min="0"
+                            required
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <div class="acciones-formulario">
+
+                    <button
+                        type="button"
+                        id="btnCancelarEdicion"
+                        class="boton boton-secundario"
+                        style="display: none;"
+                    >
+                        Cancelar edición
+                    </button>
+
+
+                    <button
+                        type="submit"
+                        id="btnGuardarProducto"
+                        class="boton boton-principal"
+                    >
+                        + Agregar producto
+                    </button>
+
+                </div>
+
+            </form>
+
+
+            <div
+                id="mensajeProducto"
+                class="mensaje"
+            ></div>
+
+
+            <div class="tabla-contenedor">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+                            <th>ID</th>
+                            <th>Producto</th>
+                            <th>Precio</th>
+                            <th>Stock</th>
+                            <th>Estado</th>
+                            <th>Gestión</th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="tablaProductos">
+
+                        <tr>
+                            <td colspan="6">
+                                Cargando productos...
+                            </td>
+                        </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+
+        <!-- BUSCADOR PEDIDOS -->
+
+        <section class="panel">
+
+            <div class="panel-titulo">
+
+                <div>
+
+                    <span class="numero-seccion">
+                        02
+                    </span>
+
+                    <div>
+
+                        <h3>
+                            Buscar pedidos
+                        </h3>
+
+                        <p>
+                            Busca por código, cliente,
+                            producto o estado.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <button
+                    type="button"
+                    id="btnActualizar"
+                    class="boton boton-secundario"
+                >
+                    ↻ Actualizar
+                </button>
+
+            </div>
+
+
+            <div class="buscador">
+
+                <span>
+                    ⌕
+                </span>
+
+                <input
+                    type="text"
+                    id="buscarPedido"
+                    placeholder="Buscar pedido..."
+                >
+
+            </div>
+
+        </section>
+
+
+        <!-- PEDIDOS ACTIVOS -->
+
+        <section class="panel">
+
+            <div class="panel-titulo">
+
+                <div>
+
+                    <span class="numero-seccion">
+                        03
+                    </span>
+
+                    <div>
+
+                        <h3>
+                            Pedidos activos
+                        </h3>
+
+                        <p>
+                            Pedidos actualmente en proceso.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="tabla-contenedor">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+                            <th>Código</th>
+                            <th>Cliente</th>
+                            <th>Producto</th>
+                            <th>Cantidad</th>
+                            <th>Entrega</th>
+                            <th>Estado</th>
+                            <th>Gestión</th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="tablaPedidosActivos"></tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+
+        <!-- CANCELADOS / RECHAZADOS -->
+
+        <section class="panel">
+
+            <div class="panel-titulo">
+
+                <div>
+
+                    <span class="numero-seccion">
+                        04
+                    </span>
+
+                    <div>
+
+                        <h3>
+                            Cancelados o rechazados
+                        </h3>
+
+                        <p>
+                            Pedidos que no continuaron
+                            con el proceso de compra.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="tabla-contenedor">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+                            <th>Código</th>
+                            <th>Cliente</th>
+                            <th>Producto</th>
+                            <th>Cantidad</th>
+                            <th>Entrega</th>
+                            <th>Estado</th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="tablaPedidosCancelados"></tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+
+        <!-- COMPLETADOS -->
+
+        <section class="panel">
+
+            <div class="panel-titulo">
+
+                <div>
+
+                    <span class="numero-seccion">
+                        05
+                    </span>
+
+                    <div>
+
+                        <h3>
+                            Pedidos completados
+                        </h3>
+
+                        <p>
+                            Pedidos entregados y finalizados.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="tabla-contenedor">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+                            <th>Código</th>
+                            <th>Cliente</th>
+                            <th>Producto</th>
+                            <th>Cantidad</th>
+                            <th>Entrega</th>
+                            <th>Estado</th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="tablaPedidosCompletados"></tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <footer>
+
+        <strong>
+            Mapuescuela
+        </strong>
+
+        <span>
+            Educa-acción para el buen vivir
+        </span>
+
+    </footer>
+
+
+    <script src="app.js"></script>
+
+</body>
+
+</html>
