@@ -1,0 +1,65 @@
+services:
+
+  mysql:
+    image: mysql:8.0
+    container_name: mapuescuela-mysql
+    restart: unless-stopped
+
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-mapuescuela_root}
+      MYSQL_DATABASE: mapuescuela
+      MYSQL_USER: ${MYSQL_USER:-mapuescuela}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-mapuescuela123}
+
+    ports:
+      - "${MYSQL_PORT:-3307}:3306"
+
+    volumes:
+      - mapuescuela_mysql_data:/var/lib/mysql
+
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p${MYSQL_ROOT_PASSWORD:-mapuescuela_root}"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+
+  mapuescuela:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: mapuescuela-app
+    restart: unless-stopped
+
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: mapuescuela
+      DB_USER: ${MYSQL_USER:-mapuescuela}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-mapuescuela123}
+
+    ports:
+      - "${APP_PORT:-8081}:8080"
+      - "${GLASSFISH_ADMIN_PORT:-4849}:4848"
+
+
+volumes:
+
+  mapuescuela_mysql_data:
+    name: mapuescuela_mysql_data
