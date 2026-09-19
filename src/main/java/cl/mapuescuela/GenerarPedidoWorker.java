@@ -18,7 +18,10 @@ public class GenerarPedidoWorker {
         private final int codigoHttp;
         private final String respuestaJson;
 
-        public ResultadoPedido(int codigoHttp, String respuestaJson) {
+        public ResultadoPedido(
+                int codigoHttp,
+                String respuestaJson) {
+
             this.codigoHttp = codigoHttp;
             this.respuestaJson = respuestaJson;
         }
@@ -32,25 +35,67 @@ public class GenerarPedidoWorker {
         }
     }
 
+    /*
+     * NUEVA VERSION
+     *
+     * Crea un pedido utilizando:
+     * productoId + cantidad.
+     */
     public static int generarPedido(
             String cliente,
-            String producto,
+            int productoId,
+            int cantidad,
             String modalidadEntrega) throws Exception {
 
         ResultadoPedido resultado =
                 generarPedidoConRespuesta(
                         cliente,
-                        producto,
+                        productoId,
+                        cantidad,
                         modalidadEntrega
                 );
 
         return resultado.getCodigoHttp();
     }
 
+    /*
+     * NUEVA VERSION
+     */
     public static ResultadoPedido generarPedidoConRespuesta(
             String cliente,
-            String producto,
+            int productoId,
+            int cantidad,
             String modalidadEntrega) throws Exception {
+
+        if (cliente == null ||
+                cliente.trim().isEmpty()) {
+
+            throw new IllegalArgumentException(
+                    "El cliente es obligatorio."
+            );
+        }
+
+        if (productoId <= 0) {
+
+            throw new IllegalArgumentException(
+                    "El productoId debe ser mayor que cero."
+            );
+        }
+
+        if (cantidad <= 0) {
+
+            throw new IllegalArgumentException(
+                    "La cantidad debe ser mayor que cero."
+            );
+        }
+
+        if (modalidadEntrega == null ||
+                modalidadEntrega.trim().isEmpty()) {
+
+            throw new IllegalArgumentException(
+                    "La modalidad de entrega es obligatoria."
+            );
+        }
 
         URL url = new URL(API_PEDIDOS);
 
@@ -58,37 +103,76 @@ public class GenerarPedidoWorker {
                 (HttpURLConnection) url.openConnection();
 
         conexion.setRequestMethod("POST");
-        conexion.setRequestProperty("Content-Type", "application/json");
-        conexion.setRequestProperty("Accept", "application/json");
+
+        conexion.setRequestProperty(
+                "Content-Type",
+                "application/json"
+        );
+
+        conexion.setRequestProperty(
+                "Accept",
+                "application/json"
+        );
+
         conexion.setDoOutput(true);
 
         String json = "{"
-                + "\"cliente\":\"" + escaparJson(cliente) + "\","
-                + "\"producto\":\"" + escaparJson(producto) + "\","
+                + "\"cliente\":\""
+                + escaparJson(cliente)
+                + "\","
+                + "\"productoId\":"
+                + productoId
+                + ","
+                + "\"cantidad\":"
+                + cantidad
+                + ","
                 + "\"modalidadEntrega\":\""
-                + escaparJson(modalidadEntrega) + "\""
+                + escaparJson(modalidadEntrega)
+                + "\""
                 + "}";
 
-        try (OutputStream os = conexion.getOutputStream()) {
-            byte[] datos = json.getBytes(StandardCharsets.UTF_8);
+        try (OutputStream os =
+                     conexion.getOutputStream()) {
+
+            byte[] datos =
+                    json.getBytes(
+                            StandardCharsets.UTF_8
+                    );
+
             os.write(datos);
         }
 
-        int codigoRespuesta = conexion.getResponseCode();
+        int codigoRespuesta =
+                conexion.getResponseCode();
 
         InputStream stream;
 
-        if (codigoRespuesta >= 200 && codigoRespuesta < 300) {
+        if (codigoRespuesta >= 200 &&
+                codigoRespuesta < 300) {
+
             stream = conexion.getInputStream();
+
         } else {
+
             stream = conexion.getErrorStream();
         }
 
-        String respuestaJson = leerRespuesta(stream);
+        String respuestaJson =
+                leerRespuesta(stream);
 
-        System.out.println("Pedido enviado a Mapuescuela API");
-        System.out.println("Codigo HTTP: " + codigoRespuesta);
-        System.out.println("Respuesta: " + respuestaJson);
+        System.out.println(
+                "Pedido enviado a Mapuescuela API"
+        );
+
+        System.out.println(
+                "Codigo HTTP: "
+                        + codigoRespuesta
+        );
+
+        System.out.println(
+                "Respuesta: "
+                        + respuestaJson
+        );
 
         conexion.disconnect();
 
@@ -98,8 +182,40 @@ public class GenerarPedidoWorker {
         );
     }
 
-    private static String leerRespuesta(InputStream stream)
-            throws Exception {
+    /*
+     * METODOS ANTIGUOS
+     *
+     * Se mantienen temporalmente para que
+     * FlowableGenerarPedidoWorker siga compilando
+     * hasta que lo actualicemos.
+     */
+
+    @Deprecated
+    public static int generarPedido(
+            String cliente,
+            String producto,
+            String modalidadEntrega) throws Exception {
+
+        throw new IllegalStateException(
+                "Este metodo esta obsoleto. "
+                        + "El pedido debe utilizar productoId y cantidad."
+        );
+    }
+
+    @Deprecated
+    public static ResultadoPedido generarPedidoConRespuesta(
+            String cliente,
+            String producto,
+            String modalidadEntrega) throws Exception {
+
+        throw new IllegalStateException(
+                "Este metodo esta obsoleto. "
+                        + "El pedido debe utilizar productoId y cantidad."
+        );
+    }
+
+    private static String leerRespuesta(
+            InputStream stream) throws Exception {
 
         if (stream == null) {
             return "";
@@ -114,9 +230,12 @@ public class GenerarPedidoWorker {
                 );
 
         String linea;
-        StringBuilder respuesta = new StringBuilder();
+
+        StringBuilder respuesta =
+                new StringBuilder();
 
         while ((linea = lector.readLine()) != null) {
+
             respuesta.append(linea);
         }
 
@@ -125,7 +244,8 @@ public class GenerarPedidoWorker {
         return respuesta.toString();
     }
 
-    private static String escaparJson(String texto) {
+    private static String escaparJson(
+            String texto) {
 
         if (texto == null) {
             return "";

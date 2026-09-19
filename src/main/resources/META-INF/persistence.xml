@@ -8,6 +8,7 @@
         <jta-data-source>jdbc/MapuescuelaDS</jta-data-source>
 
         <class>cl.mapuescuela.Pedido</class>
+        <class>cl.mapuescuela.Producto</class>
 
         <properties>
 
