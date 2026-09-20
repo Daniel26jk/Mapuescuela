@@ -10,60 +10,71 @@ import java.nio.charset.StandardCharsets;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class FlowableEstadoPedidoWorker {
+public class FlowableDatosBancariosWorker {
 
     private static final String FLOWABLE_URL =
             "https://iplacex.cloud.flowable.com/sandbox/external-job-api";
 
-private static final String TOKEN =
-        System.getenv("FLOWABLE_TOKEN");
-        
+    private static final String TOKEN =
+            System.getenv("FLOWABLE_TOKEN");
+
+     private static final String TOPIC =
+        "g4-informar-datos-bancarios";
+
     private static final String WORKER_ID =
             "mapuescuela-java-worker";
 
+
     public static void main(String[] args) {
 
-        if (args.length < 2) {
-            System.out.println(
-                    "Uso: FlowableEstadoPedidoWorker <topic> <estado>"
-            );
-            return;
-        }
-
-        String topic = args[0];
-        String nuevoEstado = args[1];
-
         System.out.println("======================================");
-        System.out.println(" Mapuescuela - Worker Estado");
-        System.out.println(" Topic: " + topic);
-        System.out.println(" Estado: " + nuevoEstado);
+        System.out.println(" Mapuescuela - Datos Bancarios");
+        System.out.println(" Topic: " + TOPIC);
+        System.out.println(" Worker ID: " + WORKER_ID);
         System.out.println("======================================");
 
         try {
-            procesarTrabajo(topic, nuevoEstado);
+
+            if (TOKEN == null ||
+                    TOKEN.trim().isEmpty()) {
+
+                throw new Exception(
+                        "No se encontro la variable FLOWABLE_TOKEN."
+                );
+            }
+
+            procesarTrabajo();
+
         } catch (Exception e) {
-            System.out.println("Error ejecutando Worker:");
+
+            System.out.println(
+                    "Error ejecutando Worker:"
+            );
+
             e.printStackTrace();
         }
     }
 
-    private static void procesarTrabajo(
-            String topic,
-            String nuevoEstado)
+
+    private static void procesarTrabajo()
             throws Exception {
 
         String respuesta =
-                adquirirTrabajo(topic);
+                adquirirTrabajo();
 
-        if (respuesta == null
-                || respuesta.trim().isEmpty()
-                || respuesta.trim().equals("[]")) {
+
+        if (respuesta == null ||
+                respuesta.trim().isEmpty() ||
+                respuesta.trim().equals("[]")) {
 
             System.out.println(
-                    "No existen trabajos pendientes para: " + topic
+                    "No existen trabajos pendientes para "
+                            + TOPIC
             );
+
             return;
         }
+
 
         String jobId =
                 extraerCampoString(
@@ -71,89 +82,92 @@ private static final String TOKEN =
                         "id"
                 );
 
-        Integer pedidoId =
-                extraerVariableEntera(
-                        respuesta,
-                        "pedidoId"
-                );
 
         if (jobId == null) {
+
             throw new Exception(
                     "No se pudo obtener el ID del job."
             );
         }
 
-        if (pedidoId == null) {
-            throw new Exception(
-                    "No se pudo obtener pedidoId desde Flowable."
-            );
-        }
 
-        System.out.println("Job ID: " + jobId);
-        System.out.println("Pedido ID: " + pedidoId);
+        System.out.println(
+                "Job ID: " + jobId
+        );
 
-        int codigo =
-                ActualizarEstadoPedidoWorker.actualizarEstado(
-                        pedidoId,
-                        nuevoEstado
-                );
+        System.out.println(
+                "Datos bancarios informados."
+        );
 
-        if (codigo < 200 || codigo >= 300) {
-            throw new Exception(
-                    "No se pudo actualizar el pedido. HTTP " + codigo
-            );
-        }
 
         completarTrabajo(
-                jobId,
-                nuevoEstado
+                jobId
         );
+
 
         System.out.println("======================================");
         System.out.println(" WORKER COMPLETADO");
-        System.out.println(" Pedido: " + pedidoId);
-        System.out.println(" Estado: " + nuevoEstado);
+        System.out.println(" Datos bancarios informados correctamente");
         System.out.println("======================================");
     }
 
-    private static String adquirirTrabajo(
-            String topic)
+
+    private static String adquirirTrabajo()
             throws Exception {
 
         URL url =
                 new URL(
-                        FLOWABLE_URL + "/acquire/jobs"
+                        FLOWABLE_URL
+                                + "/acquire/jobs"
                 );
 
-        HttpURLConnection conexion =
-                (HttpURLConnection) url.openConnection();
 
-        conexion.setRequestMethod("POST");
+        HttpURLConnection conexion =
+                (HttpURLConnection)
+                        url.openConnection();
+
+
+        conexion.setRequestMethod(
+                "POST"
+        );
+
 
         conexion.setRequestProperty(
                 "Authorization",
                 "Bearer " + TOKEN
         );
 
+
         conexion.setRequestProperty(
                 "Content-Type",
                 "application/json"
         );
+
 
         conexion.setRequestProperty(
                 "Accept",
                 "application/json"
         );
 
-        conexion.setDoOutput(true);
 
-        String json = "{"
-                + "\"topic\":\"" + topic + "\","
-                + "\"workerId\":\"" + WORKER_ID + "\","
-                + "\"lockDuration\":\"PT5M\","
-                + "\"numberOfTasks\":1,"
-                + "\"scopeType\":\"bpmn\""
-                + "}";
+        conexion.setDoOutput(
+                true
+        );
+
+
+        String json =
+                "{"
+                        + "\"topic\":\""
+                        + TOPIC
+                        + "\","
+                        + "\"workerId\":\""
+                        + WORKER_ID
+                        + "\","
+                        + "\"lockDuration\":\"PT5M\","
+                        + "\"numberOfTasks\":1,"
+                        + "\"scopeType\":\"bpmn\""
+                        + "}";
+
 
         try (OutputStream os =
                      conexion.getOutputStream()) {
@@ -165,27 +179,44 @@ private static final String TOKEN =
             );
         }
 
+
         int codigo =
                 conexion.getResponseCode();
 
+
         InputStream stream;
 
-        if (codigo >= 200 && codigo < 300) {
-            stream = conexion.getInputStream();
+        if (codigo >= 200 &&
+                codigo < 300) {
+
+            stream =
+                    conexion.getInputStream();
+
         } else {
-            stream = conexion.getErrorStream();
+
+            stream =
+                    conexion.getErrorStream();
         }
 
+
         String respuesta =
-                leerRespuesta(stream);
+                leerRespuesta(
+                        stream
+                );
+
 
         conexion.disconnect();
 
+
         System.out.println(
-                "Respuesta Flowable: HTTP " + codigo
+                "Respuesta Flowable: HTTP "
+                        + codigo
         );
 
-        if (codigo < 200 || codigo >= 300) {
+
+        if (codigo < 200 ||
+                codigo >= 300) {
+
             throw new Exception(
                     "Error Flowable HTTP "
                             + codigo
@@ -194,12 +225,13 @@ private static final String TOKEN =
             );
         }
 
+
         return respuesta;
     }
 
+
     private static void completarTrabajo(
-            String jobId,
-            String nuevoEstado)
+            String jobId)
             throws Exception {
 
         URL url =
@@ -210,42 +242,54 @@ private static final String TOKEN =
                                 + "/complete"
                 );
 
-        HttpURLConnection conexion =
-                (HttpURLConnection) url.openConnection();
 
-        conexion.setRequestMethod("POST");
+        HttpURLConnection conexion =
+                (HttpURLConnection)
+                        url.openConnection();
+
+
+        conexion.setRequestMethod(
+                "POST"
+        );
+
 
         conexion.setRequestProperty(
                 "Authorization",
                 "Bearer " + TOKEN
         );
 
+
         conexion.setRequestProperty(
                 "Content-Type",
                 "application/json"
         );
+
 
         conexion.setRequestProperty(
                 "Accept",
                 "application/json"
         );
 
-        conexion.setDoOutput(true);
 
-        String json = "{"
-                + "\"workerId\":\""
-                + WORKER_ID
-                + "\","
-                + "\"variables\":["
-                + "{"
-                + "\"name\":\"estadoPedido\","
-                + "\"type\":\"string\","
-                + "\"value\":\""
-                + nuevoEstado
-                + "\""
-                + "}"
-                + "]"
-                + "}";
+        conexion.setDoOutput(
+                true
+        );
+
+
+        String json =
+                "{"
+                        + "\"workerId\":\""
+                        + WORKER_ID
+                        + "\","
+                        + "\"variables\":["
+                        + "{"
+                        + "\"name\":\"datosBancariosInformados\","
+                        + "\"type\":\"boolean\","
+                        + "\"value\":true"
+                        + "}"
+                        + "]"
+                        + "}";
+
 
         try (OutputStream os =
                      conexion.getOutputStream()) {
@@ -257,23 +301,38 @@ private static final String TOKEN =
             );
         }
 
+
         int codigo =
                 conexion.getResponseCode();
 
+
         InputStream stream;
 
-        if (codigo >= 200 && codigo < 300) {
-            stream = conexion.getInputStream();
+        if (codigo >= 200 &&
+                codigo < 300) {
+
+            stream =
+                    conexion.getInputStream();
+
         } else {
-            stream = conexion.getErrorStream();
+
+            stream =
+                    conexion.getErrorStream();
         }
 
+
         String respuesta =
-                leerRespuesta(stream);
+                leerRespuesta(
+                        stream
+                );
+
 
         conexion.disconnect();
 
-        if (codigo < 200 || codigo >= 300) {
+
+        if (codigo < 200 ||
+                codigo >= 300) {
+
             throw new Exception(
                     "No se pudo completar el job. HTTP "
                             + codigo
@@ -282,35 +341,12 @@ private static final String TOKEN =
             );
         }
 
+
         System.out.println(
                 "External Job completado en Flowable."
         );
     }
 
-    private static Integer extraerVariableEntera(
-            String json,
-            String nombreVariable) {
-
-        Pattern patron =
-                Pattern.compile(
-                        "\"name\"\\s*:\\s*\""
-                                + Pattern.quote(nombreVariable)
-                                + "\".*?"
-                                + "\"value\"\\s*:\\s*(\\d+)",
-                        Pattern.DOTALL
-                );
-
-        Matcher matcher =
-                patron.matcher(json);
-
-        if (matcher.find()) {
-            return Integer.parseInt(
-                    matcher.group(1)
-            );
-        }
-
-        return null;
-    }
 
     private static String extraerCampoString(
             String json,
@@ -323,23 +359,32 @@ private static final String TOKEN =
                                 + "\"\\s*:\\s*\"([^\"]*)\""
                 );
 
+
         Matcher matcher =
-                patron.matcher(json);
+                patron.matcher(
+                        json
+                );
+
 
         if (matcher.find()) {
+
             return matcher.group(1);
         }
 
+
         return null;
     }
+
 
     private static String leerRespuesta(
             InputStream stream)
             throws Exception {
 
         if (stream == null) {
+
             return "";
         }
+
 
         BufferedReader lector =
                 new BufferedReader(
@@ -349,15 +394,25 @@ private static final String TOKEN =
                         )
                 );
 
-        String linea;
+
         StringBuilder respuesta =
                 new StringBuilder();
 
-        while ((linea = lector.readLine()) != null) {
-            respuesta.append(linea);
+
+        String linea;
+
+
+        while ((linea =
+                lector.readLine()) != null) {
+
+            respuesta.append(
+                    linea
+            );
         }
 
+
         lector.close();
+
 
         return respuesta.toString();
     }

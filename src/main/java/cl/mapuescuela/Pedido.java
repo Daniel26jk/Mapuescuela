@@ -30,6 +30,8 @@ public class Pedido {
 
     private String estado;
 
+    private boolean inventarioActualizado;
+
     public Pedido() {
     }
 
@@ -127,5 +129,12 @@ public class Pedido {
 
     public void setEstado(String estado) {
         this.estado = estado;
+    }
+    public boolean isInventarioActualizado() {
+    return inventarioActualizado;
+    }
+
+    public void setInventarioActualizado(boolean inventarioActualizado) {
+    this.inventarioActualizado = inventarioActualizado;
     }
 }

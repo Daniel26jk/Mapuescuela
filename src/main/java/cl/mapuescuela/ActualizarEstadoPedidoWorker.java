@@ -9,8 +9,11 @@ import java.nio.charset.StandardCharsets;
 
 public class ActualizarEstadoPedidoWorker {
 
-    private static final String API_PEDIDOS =
-            "http://localhost:8080/mapuescuela-api/webapi/pedidos";
+private static final String API_PEDIDOS =
+        System.getenv().getOrDefault(
+                "MAPUESCUELA_API_URL",
+                "http://localhost:8081/mapuescuela-api/webapi/pedidos"
+        );
 
     public static int actualizarEstado(int idPedido, String nuevoEstado)
             throws Exception {
