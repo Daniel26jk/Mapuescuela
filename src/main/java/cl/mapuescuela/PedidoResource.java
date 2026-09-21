@@ -120,11 +120,11 @@ public class PedidoResource {
                 "PENDIENTE_PAGO"
         );
 
+        pedido.setInventarioDescontado(
+                false
+        );
 
-        /*
-         * Primero guardamos el pedido para que MySQL
-         * genere el ID interno.
-         */
+
         entityManager.persist(
                 pedido
         );
@@ -132,14 +132,6 @@ public class PedidoResource {
         entityManager.flush();
 
 
-        /*
-         * Después utilizamos ese ID para crear
-         * el código amigable para el cliente.
-         *
-         * Ejemplo:
-         * María González + ID 8
-         * = MARIA-000008
-         */
         String codigoPedido =
                 generarCodigoPedido(
                         pedido.getCliente(),
@@ -249,10 +241,6 @@ public class PedidoResource {
                         .toUpperCase();
 
 
-        /*
-         * Primero intentamos encontrar una coincidencia
-         * exacta por código.
-         */
         List<Pedido> porCodigo =
                 entityManager
                         .createQuery(
@@ -275,16 +263,6 @@ public class PedidoResource {
         }
 
 
-        /*
-         * Si no corresponde a un código, buscamos
-         * por el nombre del comprador.
-         *
-         * LIKE permite buscar:
-         *
-         * María
-         * María González
-         * González
-         */
         List<Pedido> porCliente =
                 entityManager
                         .createQuery(
@@ -358,85 +336,11 @@ public class PedidoResource {
         }
 
 
-        String estadoAnterior =
-                pedido.getEstado();
-
-
         String nuevoEstado =
                 datos
                         .getEstado()
                         .trim()
                         .toUpperCase();
-
-
-        /*
-         * El inventario se descuenta solamente
-         * cuando el pedido pasa por primera vez
-         * al estado PAGADO.
-         */
-        if ("PAGADO".equals(nuevoEstado)
-                &&
-                !"PAGADO".equalsIgnoreCase(
-                        estadoAnterior
-                )) {
-
-
-            if (pedido.getProductoId() <= 0 ||
-                    pedido.getCantidad() <= 0) {
-
-                return Response
-                        .status(Response.Status.BAD_REQUEST)
-                        .entity(
-                                "{\"mensaje\":\"El pedido no contiene información válida de inventario\"}"
-                        )
-                        .build();
-            }
-
-
-            Producto producto =
-                    entityManager.find(
-                            Producto.class,
-                            pedido.getProductoId()
-                    );
-
-
-            if (producto == null) {
-
-                return Response
-                        .status(Response.Status.NOT_FOUND)
-                        .entity(
-                                "{\"mensaje\":\"Producto asociado al pedido no encontrado\"}"
-                        )
-                        .build();
-            }
-
-
-            if (producto.getStock()
-                    < pedido.getCantidad()) {
-
-                return Response
-                        .status(Response.Status.BAD_REQUEST)
-                        .entity(
-                                "{\"mensaje\":\"Stock insuficiente para aprobar el pago\"}"
-                        )
-                        .build();
-            }
-
-
-            int nuevoStock =
-                    producto.getStock()
-                            - pedido.getCantidad();
-
-
-            producto.setStock(
-                    nuevoStock
-            );
-
-
-            entityManager.merge(
-                    producto
-            );
-        }
 
 
         pedido.setEstado(
@@ -447,6 +351,131 @@ public class PedidoResource {
         entityManager.merge(
                 pedido
         );
+
+        entityManager.flush();
+
+
+        return Response
+                .ok(pedido)
+                .build();
+    }
+
+
+    /* =========================================================
+       ACTUALIZAR INVENTARIO
+       ========================================================= */
+
+    @PUT
+    @Path("/{id}/inventario")
+    @Transactional
+    public Response actualizarInventario(
+            @PathParam("id") int id) {
+
+        Pedido pedido =
+                entityManager.find(
+                        Pedido.class,
+                        id
+                );
+
+
+        if (pedido == null) {
+
+            return Response
+                    .status(Response.Status.NOT_FOUND)
+                    .entity(
+                            "{\"mensaje\":\"Pedido no encontrado\"}"
+                    )
+                    .build();
+        }
+
+
+        if (pedido.isInventarioDescontado()) {
+
+            return Response
+                    .ok(pedido)
+                    .build();
+        }
+
+
+        if (pedido.getProductoId() <= 0 ||
+                pedido.getCantidad() <= 0) {
+
+            return Response
+                    .status(Response.Status.BAD_REQUEST)
+                    .entity(
+                            "{\"mensaje\":\"El pedido no contiene información válida de inventario\"}"
+                    )
+                    .build();
+        }
+
+
+        if (!"PAGADO".equalsIgnoreCase(
+                pedido.getEstado()
+        )) {
+
+            return Response
+                    .status(Response.Status.BAD_REQUEST)
+                    .entity(
+                            "{\"mensaje\":\"El inventario solo puede actualizarse para pedidos pagados\"}"
+                    )
+                    .build();
+        }
+
+
+        Producto producto =
+                entityManager.find(
+                        Producto.class,
+                        pedido.getProductoId()
+                );
+
+
+        if (producto == null) {
+
+            return Response
+                    .status(Response.Status.NOT_FOUND)
+                    .entity(
+                            "{\"mensaje\":\"Producto asociado al pedido no encontrado\"}"
+                    )
+                    .build();
+        }
+
+
+        if (producto.getStock()
+                < pedido.getCantidad()) {
+
+            return Response
+                    .status(Response.Status.BAD_REQUEST)
+                    .entity(
+                            "{\"mensaje\":\"Stock insuficiente para actualizar inventario\"}"
+                    )
+                    .build();
+        }
+
+
+        int nuevoStock =
+                producto.getStock()
+                        - pedido.getCantidad();
+
+
+        producto.setStock(
+                nuevoStock
+        );
+
+
+        pedido.setInventarioDescontado(
+                true
+        );
+
+
+        entityManager.merge(
+                producto
+        );
+
+        entityManager.merge(
+                pedido
+        );
+
+        entityManager.flush();
 
 
         return Response
@@ -463,25 +492,12 @@ public class PedidoResource {
             String cliente,
             int id) {
 
-        /*
-         * Obtenemos solamente el primer nombre.
-         *
-         * "María González"
-         * se transforma en
-         * "María"
-         */
         String primerNombre =
                 cliente
                         .trim()
                         .split("\\s+")[0];
 
 
-        /*
-         * Eliminamos tildes.
-         *
-         * María -> Maria
-         * José  -> Jose
-         */
         primerNombre =
                 Normalizer
                         .normalize(
@@ -494,10 +510,6 @@ public class PedidoResource {
                         );
 
 
-        /*
-         * Convertimos a mayúsculas y eliminamos
-         * caracteres especiales.
-         */
         primerNombre =
                 primerNombre
                         .toUpperCase()
@@ -507,10 +519,6 @@ public class PedidoResource {
                         );
 
 
-        /*
-         * Protección por si el nombre llegara
-         * a quedar vacío después de limpiarlo.
-         */
         if (primerNombre.isEmpty()) {
 
             primerNombre =
@@ -518,13 +526,6 @@ public class PedidoResource {
         }
 
 
-        /*
-         * El ID interno hace que el código
-         * siga siendo único.
-         *
-         * Ejemplo:
-         * MARIA-000008
-         */
         return String.format(
                 "%s-%06d",
                 primerNombre,

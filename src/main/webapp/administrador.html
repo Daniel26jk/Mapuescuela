@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
+
     <meta
         name="viewport"
         content="width=device-width, initial-scale=1.0"
@@ -34,6 +35,7 @@
         <div class="estandarte-negro"></div>
     </aside>
 
+
     <header class="encabezado">
 
         <div class="franja-colores">
@@ -42,6 +44,7 @@
             <span class="color-verde"></span>
             <span class="color-rojo"></span>
         </div>
+
 
         <div class="encabezado-contenido">
 
@@ -67,17 +70,49 @@
 
             </div>
 
-            <div class="estado-sistema">
 
-                <span class="punto-online"></span>
+            <div
+                style="
+                    display: flex;
+                    align-items: center;
+                    justify-content: flex-end;
+                    gap: 10px;
+                    flex-wrap: wrap;
+                "
+            >
 
-                Sistema activo
+                <div class="estado-sistema">
+
+                    <span class="punto-online"></span>
+
+                    Sesión activa
+
+                </div>
+
+
+                <button
+                    type="button"
+                    id="btnInicio"
+                    class="boton boton-secundario"
+                >
+                    Inicio
+                </button>
+
+
+                <button
+                    type="button"
+                    id="btnCerrarSesion"
+                    class="boton boton-secundario"
+                >
+                    Cerrar sesión
+                </button>
 
             </div>
 
         </div>
 
     </header>
+
 
     <main class="contenedor">
 
@@ -190,6 +225,27 @@
 
             </article>
 
+
+            <article class="tarjeta-resumen">
+
+                <span class="icono-resumen">
+                    ⚠
+                </span>
+
+                <div>
+
+                    <p>
+                        Stock bajo
+                    </p>
+
+                    <strong id="totalStockBajo">
+                        0
+                    </strong>
+
+                </div>
+
+            </article>
+
         </section>
 
 
@@ -214,6 +270,8 @@
                         <p>
                             Agrega productos y administra
                             precio, descripción y stock.
+                            Se considera stock bajo cuando
+                            existen 5 unidades o menos.
                         </p>
 
                     </div>
@@ -342,9 +400,11 @@
                     <tbody id="tablaProductos">
 
                         <tr>
+
                             <td colspan="6">
                                 Cargando productos...
                             </td>
+
                         </tr>
 
                     </tbody>
@@ -356,7 +416,7 @@
         </section>
 
 
-        <!-- BUSCADOR PEDIDOS -->
+        <!-- BUSCADOR -->
 
         <section class="panel">
 
@@ -468,7 +528,7 @@
         </section>
 
 
-        <!-- CANCELADOS / RECHAZADOS -->
+        <!-- CANCELADOS -->
 
         <section class="panel">
 

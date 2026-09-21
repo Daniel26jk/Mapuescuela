@@ -30,13 +30,11 @@ public class Pedido {
 
     private String estado;
 
+    private boolean inventarioDescontado;
+
     public Pedido() {
     }
 
-    /*
-     * Se mantiene este constructor para no romper
-     * código anterior que pudiera utilizarlo.
-     */
     public Pedido(
             String cliente,
             String producto,
@@ -47,6 +45,7 @@ public class Pedido {
         this.producto = producto;
         this.modalidadEntrega = modalidadEntrega;
         this.estado = estado;
+        this.inventarioDescontado = false;
     }
 
     public Pedido(
@@ -63,6 +62,7 @@ public class Pedido {
         this.cantidad = cantidad;
         this.modalidadEntrega = modalidadEntrega;
         this.estado = estado;
+        this.inventarioDescontado = false;
     }
 
     public int getId() {
@@ -127,5 +127,16 @@ public class Pedido {
 
     public void setEstado(String estado) {
         this.estado = estado;
+    }
+
+    public boolean isInventarioDescontado() {
+        return inventarioDescontado;
+    }
+
+    public void setInventarioDescontado(
+            boolean inventarioDescontado) {
+
+        this.inventarioDescontado =
+                inventarioDescontado;
     }
 }

@@ -4,60 +4,114 @@ const API_PEDIDOS =
 const API_PRODUCTOS =
     "webapi/productos";
 
+const API_AUTH =
+    "webapi/auth";
+
+
+const STOCK_BAJO =
+    5;
+
 
 const tablaPedidosActivos =
-    document.getElementById("tablaPedidosActivos");
+    document.getElementById(
+        "tablaPedidosActivos"
+    );
 
 const tablaPedidosCancelados =
-    document.getElementById("tablaPedidosCancelados");
+    document.getElementById(
+        "tablaPedidosCancelados"
+    );
 
 const tablaPedidosCompletados =
-    document.getElementById("tablaPedidosCompletados");
+    document.getElementById(
+        "tablaPedidosCompletados"
+    );
 
 
 const buscarPedido =
-    document.getElementById("buscarPedido");
+    document.getElementById(
+        "buscarPedido"
+    );
 
 const btnActualizar =
-    document.getElementById("btnActualizar");
+    document.getElementById(
+        "btnActualizar"
+    );
+
+const btnInicio =
+    document.getElementById(
+        "btnInicio"
+    );
+
+const btnCerrarSesion =
+    document.getElementById(
+        "btnCerrarSesion"
+    );
 
 
 const totalActivos =
-    document.getElementById("totalActivos");
+    document.getElementById(
+        "totalActivos"
+    );
 
 const totalCancelados =
-    document.getElementById("totalCancelados");
+    document.getElementById(
+        "totalCancelados"
+    );
 
 const totalCompletados =
-    document.getElementById("totalCompletados");
+    document.getElementById(
+        "totalCompletados"
+    );
 
 const totalProductosActivos =
-    document.getElementById("totalProductosActivos");
+    document.getElementById(
+        "totalProductosActivos"
+    );
+
+const totalStockBajo =
+    document.getElementById(
+        "totalStockBajo"
+    );
 
 
 const formProducto =
-    document.getElementById("formProducto");
+    document.getElementById(
+        "formProducto"
+    );
 
 const tablaProductos =
-    document.getElementById("tablaProductos");
+    document.getElementById(
+        "tablaProductos"
+    );
 
 const mensajeProducto =
-    document.getElementById("mensajeProducto");
+    document.getElementById(
+        "mensajeProducto"
+    );
 
 const btnGuardarProducto =
-    document.getElementById("btnGuardarProducto");
+    document.getElementById(
+        "btnGuardarProducto"
+    );
 
 const btnCancelarEdicion =
-    document.getElementById("btnCancelarEdicion");
+    document.getElementById(
+        "btnCancelarEdicion"
+    );
 
 
-let pedidosGuardados = [];
+let pedidosGuardados =
+    [];
 
-let productosGuardados = [];
+let productosGuardados =
+    [];
 
-let productoEditandoId = null;
+let productoEditandoId =
+    null;
 
-let productoEditandoActivo = true;
+let productoEditandoActivo =
+    true;
 
 
 /* =========================================================
@@ -68,12 +122,124 @@ document.addEventListener(
     "DOMContentLoaded",
     async () => {
 
+        const autenticado =
+            await verificarSesion();
+
+
+        if (!autenticado) {
+
+            return;
+        }
+
+
         await cargarProductos();
 
         await cargarPedidos();
-
     }
 );
+
+
+/* =========================================================
+   SESION
+   ========================================================= */
+
+async function verificarSesion() {
+
+    try {
+
+        const response =
+            await fetch(
+                `${API_AUTH}/session`
+            );
+
+
+        if (!response.ok) {
+
+            window.location.href =
+                "login.html";
+
+            return false;
+        }
+
+
+        const resultado =
+            await response.json();
+
+
+        if (
+            resultado.autenticado
+            !== true
+        ) {
+
+            window.location.href =
+                "login.html";
+
+            return false;
+        }
+
+
+        return true;
+
+
+    } catch (error) {
+
+        console.error(
+            "No fue posible verificar la sesión.",
+            error
+        );
+
+
+        window.location.href =
+            "login.html";
+
+        return false;
+    }
+}
+
+
+btnInicio.addEventListener(
+    "click",
+    () => {
+
+        window.location.href =
+            "index.html";
+    }
+);
+
+
+btnCerrarSesion.addEventListener(
+    "click",
+    cerrarSesion
+);
+
+
+async function cerrarSesion() {
+
+    try {
+
+        await fetch(
+            `${API_AUTH}/logout`,
+            {
+                method:
+                    "POST"
+            }
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "No fue posible cerrar la sesión.",
+            error
+        );
+
+
+    } finally {
+
+        window.location.href =
+            "login.html";
+    }
+}
 
 
 /* =========================================================
@@ -87,16 +253,24 @@ formProducto.addEventListener(
         event.preventDefault();
 
 
+        const editando =
+            productoEditandoId !== null;
+
+
         const nombre =
             document
-                .getElementById("nombreProducto")
+                .getElementById(
+                    "nombreProducto"
+                )
                 .value
                 .trim();
 
 
         const descripcion =
             document
-                .getElementById("descripcionProducto")
+                .getElementById(
+                    "descripcionProducto"
+                )
                 .value
                 .trim();
 
@@ -104,7 +278,9 @@ formProducto.addEventListener(
         const precio =
             Number(
                 document
-                    .getElementById("precioProducto")
+                    .getElementById(
+                        "precioProducto"
+                    )
                     .value
             );
 
@@ -112,7 +288,9 @@ formProducto.addEventListener(
         const stock =
             Number(
                 document
-                    .getElementById("stockProducto")
+                    .getElementById(
+                        "stockProducto"
+                    )
                     .value
             );
 
@@ -125,9 +303,9 @@ formProducto.addEventListener(
             stock,
 
             activo:
-                productoEditandoId === null
-                    ? true
-                    : productoEditandoActivo
+                editando
+                    ? productoEditandoActivo
+                    : true
         };
 
 
@@ -136,7 +314,7 @@ formProducto.addEventListener(
             let response;
 
 
-            if (productoEditandoId === null) {
+            if (!editando) {
 
                 response =
                     await fetch(
@@ -204,6 +382,14 @@ formProducto.addEventListener(
             await cargarProductos();
 
 
+            mostrarMensajeProducto(
+                editando
+                    ? "Producto actualizado correctamente."
+                    : "Producto agregado correctamente.",
+                "exito"
+            );
+
+
         } catch (error) {
 
             mostrarMensajeProducto(
@@ -226,7 +412,17 @@ async function cargarProductos() {
     try {
 
         const response =
-            await fetch(API_PRODUCTOS);
+            await fetch(
+                API_PRODUCTOS
+            );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                "No fue posible cargar los productos."
+            );
+        }
 
 
         productosGuardados =
@@ -245,24 +441,80 @@ async function cargarProductos() {
             ).length;
 
 
+        totalStockBajo.textContent =
+            productosGuardados.filter(
+                producto =>
+                    producto.activo
+                    &&
+                    Number(
+                        producto.stock
+                    ) <= STOCK_BAJO
+            ).length;
+
+
     } catch (error) {
 
-        console.error(error);
+        console.error(
+            error
+        );
+
+
+        tablaProductos.innerHTML = `
+
+            <tr>
+
+                <td colspan="6">
+                    No fue posible cargar los productos.
+                </td>
+
+            </tr>
+        `;
     }
 }
 
 
-function mostrarProductos(productos) {
+function mostrarProductos(
+    productos
+) {
 
     tablaProductos.innerHTML =
         "";
+
+
+    if (
+        productos.length === 0
+    ) {
+
+        tablaProductos.innerHTML = `
+
+            <tr>
+
+                <td colspan="6">
+                    No existen productos registrados.
+                </td>
+
+            </tr>
+        `;
+
+        return;
+    }
 
 
     productos.forEach(
         producto => {
 
             const fila =
-                document.createElement("tr");
+                document.createElement(
+                    "tr"
+                );
+
+
+            const stockEsBajo =
+                producto.activo
+                &&
+                Number(
+                    producto.stock
+                ) <= STOCK_BAJO;
 
 
             fila.innerHTML = `
@@ -286,11 +538,19 @@ function mostrarProductos(productos) {
                 </td>
 
                 <td>
-                    $${formatearPrecio(producto.precio)}
+                    $${formatearPrecio(
+                        producto.precio
+                    )}
                 </td>
 
                 <td>
-                    ${producto.stock}
+
+                    ${
+                        stockEsBajo
+                            ? `⚠ ${producto.stock}`
+                            : producto.stock
+                    }
+
                 </td>
 
                 <td>
@@ -340,7 +600,9 @@ function mostrarProductos(productos) {
 }
 
 
-function editarProducto(id) {
+function editarProducto(
+    id
+) {
 
     const producto =
         productosGuardados.find(
@@ -350,6 +612,7 @@ function editarProducto(id) {
 
 
     if (!producto) {
+
         return;
     }
 
@@ -362,19 +625,35 @@ function editarProducto(id) {
         producto.activo;
 
 
-    nombreProducto.value =
+    document
+        .getElementById(
+            "nombreProducto"
+        )
+        .value =
         producto.nombre;
 
 
-    descripcionProducto.value =
-        producto.descripcion;
+    document
+        .getElementById(
+            "descripcionProducto"
+        )
+        .value =
+        producto.descripcion || "";
 
 
-    precioProducto.value =
+    document
+        .getElementById(
+            "precioProducto"
+        )
+        .value =
         producto.precio;
 
 
-    stockProducto.value =
+    document
+        .getElementById(
+            "stockProducto"
+        )
+        .value =
         producto.stock;
 
 
@@ -384,6 +663,12 @@ function editarProducto(id) {
 
     btnCancelarEdicion.style.display =
         "inline-block";
+
+
+    mostrarMensajeProducto(
+        "",
+        ""
+    );
 }
 
 
@@ -392,35 +677,55 @@ async function cambiarEstadoProducto(
     estadoActual
 ) {
 
-    const response =
-        await fetch(
-            `${API_PRODUCTOS}/${id}/estado`,
-            {
+    try {
 
-                method:
-                    "PUT",
+        const response =
+            await fetch(
+                `${API_PRODUCTOS}/${id}/estado`,
+                {
 
-                headers: {
+                    method:
+                        "PUT",
 
-                    "Content-Type":
-                        "application/json"
-                },
+                    headers: {
 
-                body:
-                    JSON.stringify({
+                        "Content-Type":
+                            "application/json"
+                    },
 
-                        activo:
-                            !estadoActual
+                    body:
+                        JSON.stringify({
 
-                    })
-            }
-        );
+                            activo:
+                                !estadoActual
+                        })
+                }
+            );
 
 
-    if (response.ok) {
+        if (!response.ok) {
+
+            throw new Error(
+                "No fue posible cambiar el estado del producto."
+            );
+        }
+
 
         await cargarProductos();
 
+
+        mostrarMensajeProducto(
+            "Estado del producto actualizado correctamente.",
+            "exito"
+        );
+
+
+    } catch (error) {
+
+        mostrarMensajeProducto(
+            error.message,
+            "error"
+        );
     }
 }
 
@@ -456,7 +761,17 @@ async function cargarPedidos() {
     try {
 
         const response =
-            await fetch(API_PEDIDOS);
+            await fetch(
+                API_PEDIDOS
+            );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                "No fue posible cargar los pedidos."
+            );
+        }
 
 
         pedidosGuardados =
@@ -473,7 +788,9 @@ async function cargarPedidos() {
 
     } catch (error) {
 
-        console.error(error);
+        console.error(
+            error
+        );
     }
 }
 
@@ -549,7 +866,9 @@ function mostrarPedidosActivos(
         "";
 
 
-    if (pedidos.length === 0) {
+    if (
+        pedidos.length === 0
+    ) {
 
         tablaPedidosActivos.innerHTML = `
 
@@ -570,7 +889,9 @@ function mostrarPedidosActivos(
         pedido => {
 
             const fila =
-                document.createElement("tr");
+                document.createElement(
+                    "tr"
+                );
 
 
             fila.innerHTML =
@@ -589,7 +910,7 @@ function mostrarPedidosActivos(
 
 
 /* =========================================================
-   HISTÓRICOS
+   PEDIDOS HISTORICOS
    ========================================================= */
 
 function mostrarPedidosHistoricos(
@@ -601,7 +922,9 @@ function mostrarPedidosHistoricos(
         "";
 
 
-    if (pedidos.length === 0) {
+    if (
+        pedidos.length === 0
+    ) {
 
         tabla.innerHTML = `
 
@@ -622,7 +945,9 @@ function mostrarPedidosHistoricos(
         pedido => {
 
             const fila =
-                document.createElement("tr");
+                document.createElement(
+                    "tr"
+                );
 
 
             fila.innerHTML =
@@ -641,7 +966,7 @@ function mostrarPedidosHistoricos(
 
 
 /* =========================================================
-   CREAR FILA
+   CREAR FILA PEDIDO
    ========================================================= */
 
 function crearFilaPedido(
@@ -652,11 +977,13 @@ function crearFilaPedido(
     return `
 
         <td>
+
             ${
                 pedido.codigoPedido
                 ||
                 `#${pedido.id}`
             }
+
         </td>
 
         <td>
@@ -672,15 +999,19 @@ function crearFilaPedido(
         </td>
 
         <td>
+
             ${formatearModalidad(
                 pedido.modalidadEntrega
             )}
+
         </td>
 
         <td>
+
             ${formatearEstado(
                 pedido.estado
             )}
+
         </td>
 
         ${
@@ -692,7 +1023,11 @@ function crearFilaPedido(
                         <select
                             id="estado-${pedido.id}"
                         >
-                            ${crearOpcionesEstado(pedido)}
+
+                            ${crearOpcionesEstado(
+                                pedido
+                            )}
+
                         </select>
 
                         <button
@@ -704,7 +1039,7 @@ function crearFilaPedido(
 
                     </td>
 
-                  `
+                `
                 : ""
         }
     `;
@@ -712,14 +1047,15 @@ function crearFilaPedido(
 
 
 /* =========================================================
-   ESTADOS
+   ESTADOS DE PEDIDO
    ========================================================= */
 
 function crearOpcionesEstado(
     pedido
 ) {
 
-    let estados = [];
+    let estados =
+        [];
 
 
     if (
@@ -738,6 +1074,7 @@ function crearOpcionesEstado(
             "CANCELADO"
 
         ];
+
 
     } else {
 
@@ -767,7 +1104,11 @@ function crearOpcionesEstado(
                             : ""
                     }
                 >
-                    ${formatearEstado(estado)}
+
+                    ${formatearEstado(
+                        estado
+                    )}
+
                 </option>
 
             `
@@ -786,38 +1127,69 @@ async function actualizarEstado(
         );
 
 
+    if (!selector) {
+
+        return;
+    }
+
+
     const estado =
         selector.value;
 
 
-    const response =
-        await fetch(
-            `${API_PEDIDOS}/${id}/estado`,
-            {
+    try {
 
-                method:
-                    "PUT",
+        const response =
+            await fetch(
+                `${API_PEDIDOS}/${id}/estado`,
+                {
 
-                headers: {
+                    method:
+                        "PUT",
 
-                    "Content-Type":
-                        "application/json"
-                },
+                    headers: {
 
-                body:
-                    JSON.stringify({
-                        estado
-                    })
-            }
-        );
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify({
+                            estado
+                        })
+                }
+            );
 
 
-    if (response.ok) {
+        const resultado =
+            await response.json();
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                resultado.mensaje
+                ||
+                "No fue posible actualizar el pedido."
+            );
+        }
+
 
         await cargarPedidos();
 
         await cargarProductos();
 
+
+    } catch (error) {
+
+        console.error(
+            error
+        );
+
+
+        alert(
+            error.message
+        );
     }
 }
 
@@ -843,27 +1215,47 @@ buscarPedido.addEventListener(
 
                     return (
 
-                        (pedido.codigoPedido || "")
+                        (
+                            pedido.codigoPedido
+                            || ""
+                        )
                             .toLowerCase()
-                            .includes(texto)
+                            .includes(
+                                texto
+                            )
 
                         ||
 
-                        (pedido.cliente || "")
+                        (
+                            pedido.cliente
+                            || ""
+                        )
                             .toLowerCase()
-                            .includes(texto)
+                            .includes(
+                                texto
+                            )
 
                         ||
 
-                        (pedido.producto || "")
+                        (
+                            pedido.producto
+                            || ""
+                        )
                             .toLowerCase()
-                            .includes(texto)
+                            .includes(
+                                texto
+                            )
 
                         ||
 
-                        (pedido.estado || "")
+                        (
+                            pedido.estado
+                            || ""
+                        )
                             .toLowerCase()
-                            .includes(texto)
+                            .includes(
+                                texto
+                            )
 
                     );
                 }
@@ -884,7 +1276,6 @@ btnActualizar.addEventListener(
         await cargarPedidos();
 
         await cargarProductos();
-
     }
 );
 
@@ -937,7 +1328,9 @@ function formatearPrecio(
     precio
 ) {
 
-    return Number(precio)
+    return Number(
+        precio
+    )
         .toLocaleString(
             "es-CL"
         );
@@ -948,12 +1341,18 @@ function formatearModalidad(
     modalidad
 ) {
 
-    if (modalidad === "RETIRO") {
+    if (
+        modalidad === "RETIRO"
+    ) {
+
         return "Retiro";
     }
 
 
-    if (modalidad === "DESPACHO") {
+    if (
+        modalidad === "DESPACHO"
+    ) {
+
         return "Despacho";
     }
 
@@ -1012,5 +1411,13 @@ function mostrarMensajeProducto(
 
 
     mensajeProducto.className =
-        `mensaje ${tipo}`;
+        "mensaje";
+
+
+    if (tipo) {
+
+        mensajeProducto.classList.add(
+            tipo
+        );
+    }
 }
