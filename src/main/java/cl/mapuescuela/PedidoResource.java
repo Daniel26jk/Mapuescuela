@@ -15,7 +15,11 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import java.text.Normalizer;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Path("/pedidos")
 @Produces(MediaType.APPLICATION_JSON)
@@ -25,511 +29,398 @@ public class PedidoResource {
     @PersistenceContext(unitName = "MapuescuelaPU")
     private EntityManager entityManager;
 
-
-    /* =========================================================
-       CREAR PEDIDO
-       ========================================================= */
-
     @POST
     @Transactional
     public Response crearPedido(Pedido pedido) {
-
-        if (pedido.getCliente() == null ||
-                pedido.getCliente().trim().isEmpty()) {
-
-            return Response
-                    .status(Response.Status.BAD_REQUEST)
-                    .entity(
-                            "{\"mensaje\":\"Debe indicar el cliente\"}"
-                    )
-                    .build();
+        if (pedido == null) {
+            return error(Response.Status.BAD_REQUEST, "Debe enviar los datos del pedido");
         }
 
-
-        if (pedido.getProductoId() <= 0) {
-
-            return Response
-                    .status(Response.Status.BAD_REQUEST)
-                    .entity(
-                            "{\"mensaje\":\"Debe indicar un producto válido\"}"
-                    )
-                    .build();
+        if (vacio(pedido.getCliente())) {
+            return error(Response.Status.BAD_REQUEST, "Debe indicar el nombre del cliente");
         }
 
-
-        if (pedido.getCantidad() <= 0) {
-
-            return Response
-                    .status(Response.Status.BAD_REQUEST)
-                    .entity(
-                            "{\"mensaje\":\"La cantidad debe ser mayor que cero\"}"
-                    )
-                    .build();
+        String modalidad = normalizarModalidad(pedido.getModalidadEntrega());
+        if (modalidad == null) {
+            return error(Response.Status.BAD_REQUEST, "Debe indicar una modalidad de entrega válida");
         }
 
+        List<PedidoItem> itemsEntrada = pedido.getItems();
+        if (itemsEntrada == null || itemsEntrada.isEmpty()) {
+            if (pedido.getProductoId() <= 0 || pedido.getCantidad() <= 0) {
+                return error(Response.Status.BAD_REQUEST, "Debe agregar al menos un producto al pedido");
+            }
 
-        Producto producto =
-                entityManager.find(
-                        Producto.class,
-                        pedido.getProductoId()
-                );
-
-
-        if (producto == null) {
-
-            return Response
-                    .status(Response.Status.NOT_FOUND)
-                    .entity(
-                            "{\"mensaje\":\"Producto no encontrado\"}"
-                    )
-                    .build();
+            PedidoItem itemLegacy = new PedidoItem();
+            itemLegacy.setProductoId(pedido.getProductoId());
+            itemLegacy.setCantidad(pedido.getCantidad());
+            itemsEntrada = new ArrayList<PedidoItem>();
+            itemsEntrada.add(itemLegacy);
         }
 
+        List<PedidoItem> itemsValidados = new ArrayList<PedidoItem>();
+        int total = 0;
+        int totalUnidades = 0;
 
-        if (!producto.isActivo()) {
+        for (PedidoItem itemEntrada : itemsEntrada) {
+            if (itemEntrada == null || itemEntrada.getProductoId() <= 0 || itemEntrada.getCantidad() <= 0) {
+                return error(Response.Status.BAD_REQUEST, "Uno de los productos del carrito no es válido");
+            }
 
-            return Response
-                    .status(Response.Status.BAD_REQUEST)
-                    .entity(
-                            "{\"mensaje\":\"El producto no está disponible\"}"
-                    )
-                    .build();
+            Producto producto = entityManager.find(Producto.class, itemEntrada.getProductoId());
+            if (producto == null) {
+                return error(Response.Status.NOT_FOUND, "Producto no encontrado: " + itemEntrada.getProductoId());
+            }
+            if (!producto.isActivo()) {
+                return error(Response.Status.BAD_REQUEST, "El producto " + producto.getNombre() + " no está disponible");
+            }
+            if (producto.getStock() < itemEntrada.getCantidad()) {
+                return error(Response.Status.BAD_REQUEST, "Stock insuficiente para " + producto.getNombre());
+            }
+
+            PedidoItem item = new PedidoItem();
+            item.setProductoId(producto.getId());
+            item.setProducto(producto.getNombre());
+            item.setCantidad(itemEntrada.getCantidad());
+            item.setPrecioUnitario(producto.getPrecio());
+            item.setSubtotal(producto.getPrecio() * itemEntrada.getCantidad());
+            itemsValidados.add(item);
+
+            total += item.getSubtotal();
+            totalUnidades += item.getCantidad();
         }
 
+        PedidoItem primero = itemsValidados.get(0);
+        pedido.setCliente(pedido.getCliente().trim());
+        pedido.setEmail(limpiar(pedido.getEmail()));
+        pedido.setTelefono(limpiar(pedido.getTelefono()));
+        pedido.setModalidadEntrega(modalidad);
+        pedido.setDireccionEntrega(limpiar(pedido.getDireccionEntrega()));
+        pedido.setComunaEntrega(limpiar(pedido.getComunaEntrega()));
+        pedido.setProductoId(primero.getProductoId());
+        pedido.setCantidad(totalUnidades);
+        pedido.setProducto(itemsValidados.size() == 1
+                ? primero.getProducto()
+                : itemsValidados.size() + " productos");
+        pedido.setTotal(total);
+        pedido.setEstado("PENDIENTE_PAGO");
+        pedido.setInventarioDescontado(false);
+        pedido.setComprobanteAdjunto(false);
+        pedido.setEmpresaTransporte("");
+        pedido.setNumeroSeguimiento("");
+        pedido.setFechaEnvio("");
 
-        if (producto.getStock() < pedido.getCantidad()) {
-
-            return Response
-                    .status(Response.Status.BAD_REQUEST)
-                    .entity(
-                            "{\"mensaje\":\"Stock insuficiente\"}"
-                    )
-                    .build();
-        }
-
-
-        pedido.setCliente(
-                pedido.getCliente().trim()
-        );
-
-        pedido.setProducto(
-                producto.getNombre()
-        );
-
-        pedido.setEstado(
-                "PENDIENTE_PAGO"
-        );
-
-        pedido.setInventarioDescontado(
-                false
-        );
-
-
-        entityManager.persist(
-                pedido
-        );
-
+        entityManager.persist(pedido);
         entityManager.flush();
 
+        pedido.setCodigoPedido(generarCodigoPedido(pedido.getCliente(), pedido.getId()));
+        entityManager.merge(pedido);
 
-        String codigoPedido =
-                generarCodigoPedido(
-                        pedido.getCliente(),
-                        pedido.getId()
-                );
-
-
-        pedido.setCodigoPedido(
-                codigoPedido
-        );
-
-
-        entityManager.merge(
-                pedido
-        );
+        for (PedidoItem item : itemsValidados) {
+            item.setPedidoId(pedido.getId());
+            entityManager.persist(item);
+        }
 
         entityManager.flush();
+        pedido.setItems(itemsValidados);
 
-
-        return Response
-                .status(Response.Status.CREATED)
-                .entity(pedido)
-                .build();
+        return Response.status(Response.Status.CREATED).entity(pedido).build();
     }
-
-
-    /* =========================================================
-       LISTAR TODOS LOS PEDIDOS
-       ========================================================= */
 
     @GET
     public Response listarPedidos() {
+        List<Pedido> pedidos = entityManager
+                .createQuery("SELECT p FROM Pedido p ORDER BY p.id DESC", Pedido.class)
+                .getResultList();
 
-        List<Pedido> pedidos =
-                entityManager
-                        .createQuery(
-                                "SELECT p FROM Pedido p "
-                                        + "ORDER BY p.id DESC",
-                                Pedido.class
-                        )
-                        .getResultList();
-
-
-        return Response
-                .ok(pedidos)
-                .build();
+        completarItems(pedidos);
+        return Response.ok(pedidos).build();
     }
-
-
-    /* =========================================================
-       CONSULTAR POR ID INTERNO
-       ========================================================= */
 
     @GET
     @Path("/{id}")
-    public Response obtenerPedido(
-            @PathParam("id") int id) {
-
-        Pedido pedido =
-                entityManager.find(
-                        Pedido.class,
-                        id
-                );
-
-
+    public Response obtenerPedido(@PathParam("id") int id) {
+        Pedido pedido = entityManager.find(Pedido.class, id);
         if (pedido == null) {
-
-            return Response
-                    .status(Response.Status.NOT_FOUND)
-                    .entity(
-                            "{\"mensaje\":\"Pedido no encontrado\"}"
-                    )
-                    .build();
+            return error(Response.Status.NOT_FOUND, "Pedido no encontrado");
         }
 
-
-        return Response
-                .ok(pedido)
-                .build();
+        pedido.setItems(obtenerItems(id));
+        return Response.ok(pedido).build();
     }
-
-
-    /* =========================================================
-       CONSULTAR POR NOMBRE O CÓDIGO
-       ========================================================= */
 
     @GET
     @Path("/consultar")
-    public Response consultarPedido(
-            @QueryParam("busqueda") String busqueda) {
-
-        if (busqueda == null ||
-                busqueda.trim().isEmpty()) {
-
-            return Response
-                    .status(Response.Status.BAD_REQUEST)
-                    .entity(
-                            "{\"mensaje\":\"Debe indicar un nombre o código de pedido\"}"
-                    )
-                    .build();
+    public Response consultarPedido(@QueryParam("busqueda") String busqueda) {
+        if (vacio(busqueda)) {
+            return error(Response.Status.BAD_REQUEST, "Debe indicar un nombre, correo, teléfono o código de pedido");
         }
 
+        String texto = busqueda.trim();
+        String mayusculas = texto.toUpperCase();
 
-        String texto =
-                busqueda
-                        .trim()
-                        .toUpperCase();
-
-
-        List<Pedido> porCodigo =
-                entityManager
-                        .createQuery(
-                                "SELECT p FROM Pedido p "
-                                        + "WHERE UPPER(p.codigoPedido) = :codigo",
-                                Pedido.class
-                        )
-                        .setParameter(
-                                "codigo",
-                                texto
-                        )
-                        .getResultList();
-
+        List<Pedido> porCodigo = entityManager
+                .createQuery("SELECT p FROM Pedido p WHERE UPPER(p.codigoPedido) = :codigo ORDER BY p.id DESC", Pedido.class)
+                .setParameter("codigo", mayusculas)
+                .getResultList();
 
         if (!porCodigo.isEmpty()) {
-
-            return Response
-                    .ok(porCodigo)
-                    .build();
+            completarItems(porCodigo);
+            return Response.ok(porCodigo).build();
         }
 
+        List<Pedido> pedidos = entityManager
+                .createQuery(
+                        "SELECT p FROM Pedido p " +
+                        "WHERE LOWER(p.cliente) LIKE :texto " +
+                        "OR LOWER(p.email) LIKE :texto " +
+                        "OR LOWER(p.telefono) LIKE :texto " +
+                        "ORDER BY p.id DESC",
+                        Pedido.class)
+                .setParameter("texto", "%" + texto.toLowerCase() + "%")
+                .getResultList();
 
-        List<Pedido> porCliente =
-                entityManager
-                        .createQuery(
-                                "SELECT p FROM Pedido p "
-                                        + "WHERE UPPER(p.cliente) LIKE :cliente "
-                                        + "ORDER BY p.id DESC",
-                                Pedido.class
-                        )
-                        .setParameter(
-                                "cliente",
-                                "%" + texto + "%"
-                        )
-                        .getResultList();
-
-
-        if (porCliente.isEmpty()) {
-
-            return Response
-                    .status(Response.Status.NOT_FOUND)
-                    .entity(
-                            "{\"mensaje\":\"No se encontraron pedidos con esos datos\"}"
-                    )
-                    .build();
-        }
-
-
-        return Response
-                .ok(porCliente)
-                .build();
+        completarItems(pedidos);
+        return Response.ok(pedidos).build();
     }
-
-
-    /* =========================================================
-       ACTUALIZAR ESTADO DEL PEDIDO
-       ========================================================= */
 
     @PUT
     @Path("/{id}/estado")
     @Transactional
-    public Response actualizarEstado(
-            @PathParam("id") int id,
-            Pedido datos) {
-
-        Pedido pedido =
-                entityManager.find(
-                        Pedido.class,
-                        id
-                );
-
-
+    public Response actualizarEstado(@PathParam("id") int id, Pedido datos) {
+        Pedido pedido = entityManager.find(Pedido.class, id);
         if (pedido == null) {
-
-            return Response
-                    .status(Response.Status.NOT_FOUND)
-                    .entity(
-                            "{\"mensaje\":\"Pedido no encontrado\"}"
-                    )
-                    .build();
+            return error(Response.Status.NOT_FOUND, "Pedido no encontrado");
         }
 
-
-        if (datos.getEstado() == null ||
-                datos.getEstado().trim().isEmpty()) {
-
-            return Response
-                    .status(Response.Status.BAD_REQUEST)
-                    .entity(
-                            "{\"mensaje\":\"Debe indicar el estado\"}"
-                    )
-                    .build();
+        if (datos == null || vacio(datos.getEstado())) {
+            return error(Response.Status.BAD_REQUEST, "Debe indicar el estado");
         }
 
+        String estado = datos.getEstado().trim().toUpperCase();
+        if (!estadoValido(estado)) {
+            return error(Response.Status.BAD_REQUEST, "Estado de pedido no válido");
+        }
 
-        String nuevoEstado =
-                datos
-                        .getEstado()
-                        .trim()
-                        .toUpperCase();
-
-
-        pedido.setEstado(
-                nuevoEstado
-        );
-
-
-        entityManager.merge(
-                pedido
-        );
-
+        pedido.setEstado(estado);
+        entityManager.merge(pedido);
         entityManager.flush();
+        pedido.setItems(obtenerItems(id));
 
-
-        return Response
-                .ok(pedido)
-                .build();
+        return Response.ok(pedido).build();
     }
-
-
-    /* =========================================================
-       ACTUALIZAR INVENTARIO
-       ========================================================= */
 
     @PUT
     @Path("/{id}/inventario")
     @Transactional
-    public Response actualizarInventario(
-            @PathParam("id") int id) {
-
-        Pedido pedido =
-                entityManager.find(
-                        Pedido.class,
-                        id
-                );
-
-
+    public Response actualizarInventario(@PathParam("id") int id) {
+        Pedido pedido = entityManager.find(Pedido.class, id);
         if (pedido == null) {
-
-            return Response
-                    .status(Response.Status.NOT_FOUND)
-                    .entity(
-                            "{\"mensaje\":\"Pedido no encontrado\"}"
-                    )
-                    .build();
+            return error(Response.Status.NOT_FOUND, "Pedido no encontrado");
         }
-
 
         if (pedido.isInventarioDescontado()) {
-
-            return Response
-                    .ok(pedido)
-                    .build();
+            pedido.setItems(obtenerItems(id));
+            return Response.ok(pedido).build();
         }
 
-
-        if (pedido.getProductoId() <= 0 ||
-                pedido.getCantidad() <= 0) {
-
-            return Response
-                    .status(Response.Status.BAD_REQUEST)
-                    .entity(
-                            "{\"mensaje\":\"El pedido no contiene información válida de inventario\"}"
-                    )
-                    .build();
+        if (!"PAGADO".equalsIgnoreCase(pedido.getEstado())) {
+            return error(Response.Status.BAD_REQUEST, "El inventario solo puede descontarse cuando el pedido está PAGADO");
         }
 
-
-        if (!"PAGADO".equalsIgnoreCase(
-                pedido.getEstado()
-        )) {
-
-            return Response
-                    .status(Response.Status.BAD_REQUEST)
-                    .entity(
-                            "{\"mensaje\":\"El inventario solo puede actualizarse para pedidos pagados\"}"
-                    )
-                    .build();
+        List<PedidoItem> items = obtenerItems(id);
+        if (items.isEmpty()) {
+            PedidoItem legacy = new PedidoItem();
+            legacy.setProductoId(pedido.getProductoId());
+            legacy.setCantidad(pedido.getCantidad());
+            legacy.setProducto(pedido.getProducto());
+            items.add(legacy);
         }
 
-
-        Producto producto =
-                entityManager.find(
-                        Producto.class,
-                        pedido.getProductoId()
-                );
-
-
-        if (producto == null) {
-
-            return Response
-                    .status(Response.Status.NOT_FOUND)
-                    .entity(
-                            "{\"mensaje\":\"Producto asociado al pedido no encontrado\"}"
-                    )
-                    .build();
+        Map<Integer, Integer> cantidades = new HashMap<Integer, Integer>();
+        for (PedidoItem item : items) {
+            Integer actual = cantidades.get(item.getProductoId());
+            cantidades.put(item.getProductoId(), (actual == null ? 0 : actual) + item.getCantidad());
         }
 
-
-        if (producto.getStock()
-                < pedido.getCantidad()) {
-
-            return Response
-                    .status(Response.Status.BAD_REQUEST)
-                    .entity(
-                            "{\"mensaje\":\"Stock insuficiente para actualizar inventario\"}"
-                    )
-                    .build();
+        Map<Integer, Producto> productos = new HashMap<Integer, Producto>();
+        for (Map.Entry<Integer, Integer> entry : cantidades.entrySet()) {
+            Producto producto = entityManager.find(Producto.class, entry.getKey());
+            if (producto == null) {
+                return error(Response.Status.NOT_FOUND, "Uno de los productos del pedido ya no existe");
+            }
+            if (producto.getStock() < entry.getValue()) {
+                return error(Response.Status.BAD_REQUEST, "Stock insuficiente para " + producto.getNombre());
+            }
+            productos.put(entry.getKey(), producto);
         }
 
+        for (Map.Entry<Integer, Integer> entry : cantidades.entrySet()) {
+            Producto producto = productos.get(entry.getKey());
+            producto.setStock(producto.getStock() - entry.getValue());
+            entityManager.merge(producto);
+        }
 
-        int nuevoStock =
-                producto.getStock()
-                        - pedido.getCantidad();
-
-
-        producto.setStock(
-                nuevoStock
-        );
-
-
-        pedido.setInventarioDescontado(
-                true
-        );
-
-
-        entityManager.merge(
-                producto
-        );
-
-        entityManager.merge(
-                pedido
-        );
-
+        pedido.setInventarioDescontado(true);
+        entityManager.merge(pedido);
         entityManager.flush();
+        pedido.setItems(items);
 
-
-        return Response
-                .ok(pedido)
-                .build();
+        return Response.ok(pedido).build();
     }
 
-
-    /* =========================================================
-       GENERAR CÓDIGO AMIGABLE
-       ========================================================= */
-
-    private String generarCodigoPedido(
-            String cliente,
-            int id) {
-
-        String primerNombre =
-                cliente
-                        .trim()
-                        .split("\\s+")[0];
-
-
-        primerNombre =
-                Normalizer
-                        .normalize(
-                                primerNombre,
-                                Normalizer.Form.NFD
-                        )
-                        .replaceAll(
-                                "\\p{M}",
-                                ""
-                        );
-
-
-        primerNombre =
-                primerNombre
-                        .toUpperCase()
-                        .replaceAll(
-                                "[^A-Z0-9]",
-                                ""
-                        );
-
-
-        if (primerNombre.isEmpty()) {
-
-            primerNombre =
-                    "PEDIDO";
+    @PUT
+    @Path("/{id}/comprobante")
+    @Transactional
+    public Response guardarComprobante(@PathParam("id") int id, ComprobantePago datos) {
+        Pedido pedido = entityManager.find(Pedido.class, id);
+        if (pedido == null) {
+            return error(Response.Status.NOT_FOUND, "Pedido no encontrado");
         }
 
+        if (datos == null || vacio(datos.getNombreArchivo()) || vacio(datos.getDatosBase64())) {
+            return error(Response.Status.BAD_REQUEST, "Debe adjuntar un comprobante válido");
+        }
 
-        return String.format(
-                "%s-%06d",
-                primerNombre,
-                id
-        );
+        List<ComprobantePago> existentes = entityManager
+                .createQuery("SELECT c FROM ComprobantePago c WHERE c.pedidoId = :pedidoId", ComprobantePago.class)
+                .setParameter("pedidoId", id)
+                .getResultList();
+
+        ComprobantePago comprobante;
+        if (existentes.isEmpty()) {
+            comprobante = new ComprobantePago();
+            comprobante.setPedidoId(id);
+        } else {
+            comprobante = existentes.get(0);
+        }
+
+        comprobante.setNombreArchivo(datos.getNombreArchivo().trim());
+        comprobante.setTipoContenido(vacio(datos.getTipoContenido()) ? "application/octet-stream" : datos.getTipoContenido().trim());
+        comprobante.setDatosBase64(datos.getDatosBase64().trim());
+        comprobante.setFechaCarga(LocalDateTime.now().toString());
+
+        if (comprobante.getId() == 0) {
+            entityManager.persist(comprobante);
+        } else {
+            entityManager.merge(comprobante);
+        }
+
+        pedido.setComprobanteAdjunto(true);
+        if ("PENDIENTE_PAGO".equalsIgnoreCase(pedido.getEstado())) {
+            pedido.setEstado("PAGO_REVISION");
+        }
+        entityManager.merge(pedido);
+        entityManager.flush();
+
+        return Response.ok(comprobante).build();
+    }
+
+    @GET
+    @Path("/{id}/comprobante")
+    public Response obtenerComprobante(@PathParam("id") int id) {
+        Pedido pedido = entityManager.find(Pedido.class, id);
+        if (pedido == null) {
+            return error(Response.Status.NOT_FOUND, "Pedido no encontrado");
+        }
+
+        List<ComprobantePago> comprobantes = entityManager
+                .createQuery("SELECT c FROM ComprobantePago c WHERE c.pedidoId = :pedidoId", ComprobantePago.class)
+                .setParameter("pedidoId", id)
+                .getResultList();
+
+        if (comprobantes.isEmpty()) {
+            return error(Response.Status.NOT_FOUND, "El pedido no tiene comprobante adjunto");
+        }
+
+        return Response.ok(comprobantes.get(0)).build();
+    }
+
+    @PUT
+    @Path("/{id}/despacho")
+    @Transactional
+    public Response actualizarDespacho(@PathParam("id") int id, Pedido datos) {
+        Pedido pedido = entityManager.find(Pedido.class, id);
+        if (pedido == null) {
+            return error(Response.Status.NOT_FOUND, "Pedido no encontrado");
+        }
+
+        if (!"DESPACHO".equalsIgnoreCase(pedido.getModalidadEntrega())) {
+            return error(Response.Status.BAD_REQUEST, "El pedido no corresponde a modalidad DESPACHO");
+        }
+
+        pedido.setEmpresaTransporte(limpiar(datos == null ? null : datos.getEmpresaTransporte()));
+        pedido.setNumeroSeguimiento(limpiar(datos == null ? null : datos.getNumeroSeguimiento()));
+        pedido.setFechaEnvio(limpiar(datos == null ? null : datos.getFechaEnvio()));
+        entityManager.merge(pedido);
+        entityManager.flush();
+        pedido.setItems(obtenerItems(id));
+
+        return Response.ok(pedido).build();
+    }
+
+    private List<PedidoItem> obtenerItems(int pedidoId) {
+        return entityManager
+                .createQuery("SELECT i FROM PedidoItem i WHERE i.pedidoId = :pedidoId ORDER BY i.id", PedidoItem.class)
+                .setParameter("pedidoId", pedidoId)
+                .getResultList();
+    }
+
+    private void completarItems(List<Pedido> pedidos) {
+        for (Pedido pedido : pedidos) {
+            pedido.setItems(obtenerItems(pedido.getId()));
+        }
+    }
+
+    private boolean estadoValido(String estado) {
+        return "PENDIENTE_PAGO".equals(estado)
+                || "PAGO_REVISION".equals(estado)
+                || "PAGADO".equals(estado)
+                || "RECHAZADO".equals(estado)
+                || "PREPARANDO".equals(estado)
+                || "LISTO_RETIRO".equals(estado)
+                || "DESPACHADO".equals(estado)
+                || "ENTREGADO".equals(estado)
+                || "CANCELADO".equals(estado);
+    }
+
+    private String normalizarModalidad(String modalidad) {
+        if (modalidad == null) {
+            return null;
+        }
+        String valor = modalidad.trim().toUpperCase();
+        if ("RETIRO".equals(valor) || "DESPACHO".equals(valor)) {
+            return valor;
+        }
+        return null;
+    }
+
+    private boolean vacio(String valor) {
+        return valor == null || valor.trim().isEmpty();
+    }
+
+    private String limpiar(String valor) {
+        return valor == null ? "" : valor.trim();
+    }
+
+    private String generarCodigoPedido(String cliente, int id) {
+        String nombre = cliente == null ? "PEDIDO" : cliente.trim();
+        String primero = nombre.contains(" ") ? nombre.substring(0, nombre.indexOf(' ')) : nombre;
+        primero = Normalizer.normalize(primero, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .replaceAll("[^A-Za-z0-9]", "")
+                .toUpperCase();
+
+        if (primero.isEmpty()) {
+            primero = "PEDIDO";
+        }
+
+        return primero + "-" + String.format("%06d", id);
+    }
+
+    private Response error(Response.Status estado, String mensaje) {
+        return Response.status(estado)
+                .entity("{\"mensaje\":\"" + mensaje.replace("\"", "'") + "\"}")
+                .build();
     }
 }

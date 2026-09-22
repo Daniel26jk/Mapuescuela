@@ -9,6 +9,8 @@
 
         <class>cl.mapuescuela.Pedido</class>
         <class>cl.mapuescuela.Producto</class>
+        <class>cl.mapuescuela.PedidoItem</class>
+        <class>cl.mapuescuela.ComprobantePago</class>
 
         <properties>
 

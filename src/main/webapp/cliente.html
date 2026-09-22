@@ -1,441 +1,94 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>Mapuescuela | Realizar compra</title>
-
-    <link
-        rel="stylesheet"
-        href="style.css"
-    >
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapuescuela | Tienda</title>
+    <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-
     <aside class="estandarte estandarte-izquierdo">
-        <div class="estandarte-negro"></div>
-        <div class="estandarte-azul"></div>
-        <div class="estandarte-verde"></div>
-        <div class="estandarte-rojo"></div>
-        <div class="estandarte-negro"></div>
+        <div class="estandarte-negro"></div><div class="estandarte-azul"></div><div class="estandarte-verde"></div><div class="estandarte-rojo"></div><div class="estandarte-negro"></div>
     </aside>
-
     <aside class="estandarte estandarte-derecho">
-        <div class="estandarte-negro"></div>
-        <div class="estandarte-azul"></div>
-        <div class="estandarte-verde"></div>
-        <div class="estandarte-rojo"></div>
-        <div class="estandarte-negro"></div>
+        <div class="estandarte-negro"></div><div class="estandarte-azul"></div><div class="estandarte-verde"></div><div class="estandarte-rojo"></div><div class="estandarte-negro"></div>
     </aside>
 
     <header class="encabezado">
-
-        <div class="franja-colores">
-            <span class="color-negro"></span>
-            <span class="color-azul"></span>
-            <span class="color-verde"></span>
-            <span class="color-rojo"></span>
-        </div>
-
+        <div class="franja-colores"><span class="color-negro"></span><span class="color-azul"></span><span class="color-verde"></span><span class="color-rojo"></span></div>
         <div class="encabezado-contenido">
-
             <div class="marca">
-
-                <img
-                    src="img/logo-mapuescuela.png"
-                    alt="Logo Mapuescuela"
-                    class="logo-mapuescuela"
-                >
-
-                <div class="marca-texto">
-
-                    <h1>
-                        Mapuescuela
-                    </h1>
-
-                    <p>
-                        Compra de productos
-                    </p>
-
-                </div>
-
+                <img src="img/logo-mapuescuela.png" alt="Logo Mapuescuela" class="logo-mapuescuela">
+                <div class="marca-texto"><h1>Mapuescuela</h1><p>Tienda solidaria</p></div>
             </div>
-
-            <div class="estado-sistema">
-
-                <span class="punto-online"></span>
-
-                Tienda disponible
-
-            </div>
-
+            <a href="index.html" class="boton-secundario-enlace">Inicio</a>
         </div>
-
     </header>
 
     <main class="contenedor">
-
         <section class="bienvenida">
-
-            <div>
-
-                <p class="etiqueta-superior">
-                    TIENDA MAPUESCUELA
-                </p>
-
-                <h2>
-                    Realiza tu pedido
-                </h2>
-
-                <p>
-                    Busca un producto, selecciónalo y registra
-                    tu compra.
-                </p>
-
-            </div>
-
+            <div><p class="etiqueta-superior">TIENDA MAPUESCUELA</p><h2>Compra productos y apoya nuestra labor</h2><p>Revisa el catálogo, arma tu carrito y registra tu pedido.</p></div>
         </section>
 
-        <!-- PRODUCTOS -->
-
         <section class="panel">
-
-            <div class="panel-titulo">
-
-                <div>
-
-                    <span class="numero-seccion">
-                        01
-                    </span>
-
-                    <div>
-
-                        <h3>
-                            Productos disponibles
-                        </h3>
-
-                        <p>
-                            Busca por nombre y selecciona
-                            el producto que deseas comprar.
-                        </p>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-            <div class="buscador">
-
-                <span>
-                    ⌕
-                </span>
-
-                <input
-                    type="text"
-                    id="buscarProducto"
-                    placeholder="Buscar producto por nombre..."
-                >
-
-            </div>
-
-            <div
-                id="listaProductos"
-                class="productos-cliente"
-            >
-
-                <p class="cargando">
-                    Cargando productos...
-                </p>
-
-            </div>
-
+            <div class="panel-titulo"><div><span class="numero-seccion">01</span><div><h3>Catálogo</h3><p>Busca por nombre o categoría y agrega productos al carrito.</p></div></div></div>
+            <div class="buscador"><span>⌕</span><input type="text" id="buscarProducto" placeholder="Buscar por nombre o categoría..."></div>
+            <div id="listaProductos" class="productos-cliente"><p class="cargando">Cargando productos...</p></div>
         </section>
 
-        <!-- CREAR PEDIDO -->
+        <section class="panel">
+            <div class="panel-titulo"><div><span class="numero-seccion">02</span><div><h3>Carrito de compra</h3><p>Puedes comprar uno o más productos en un mismo pedido.</p></div></div></div>
+            <div class="tabla-responsive">
+                <table class="tabla-datos tabla-carrito">
+                    <thead><tr><th>Producto</th><th>Precio</th><th>Cantidad</th><th>Subtotal</th><th></th></tr></thead>
+                    <tbody id="tablaCarrito"><tr><td colspan="5">Tu carrito está vacío.</td></tr></tbody>
+                </table>
+            </div>
+            <div class="carrito-total"><span>Total del pedido</span><strong id="totalCarrito">$0</strong></div>
+        </section>
 
         <section class="panel">
-
-            <div class="panel-titulo">
-
-                <div>
-
-                    <span class="numero-seccion">
-                        02
-                    </span>
-
-                    <div>
-
-                        <h3>
-                            Datos del pedido
-                        </h3>
-
-                        <p>
-                            Completa la información para
-                            registrar tu compra.
-                        </p>
-
-                    </div>
-
-                </div>
-
-            </div>
-
+            <div class="panel-titulo"><div><span class="numero-seccion">03</span><div><h3>Datos del comprador</h3><p>Completa tus datos y selecciona la modalidad de entrega.</p></div></div></div>
             <form id="formPedidoCliente">
-
                 <div class="formulario-grid">
-
-                    <div class="campo">
-
-                        <label for="cliente">
-                            Nombre del comprador
-                        </label>
-
-                        <input
-                            type="text"
-                            id="cliente"
-                            placeholder="Ej: María González"
-                            required
-                        >
-
-                    </div>
-
-                    <div class="campo">
-
-                        <label for="productoSeleccionado">
-                            Producto seleccionado
-                        </label>
-
-                        <input
-                            type="text"
-                            id="productoSeleccionado"
-                            placeholder="Selecciona un producto"
-                            readonly
-                            required
-                        >
-
-                        <input
-                            type="hidden"
-                            id="productoId"
-                        >
-
-                    </div>
-
-                    <div class="campo">
-
-                        <label for="cantidad">
-                            Cantidad
-                        </label>
-
-                        <input
-                            type="number"
-                            id="cantidad"
-                            min="1"
-                            value="1"
-                            required
-                        >
-
-                    </div>
-
-                    <div class="campo">
-
-                        <label for="modalidadEntrega">
-                            Modalidad de entrega
-                        </label>
-
-                        <select
-                            id="modalidadEntrega"
-                            required
-                        >
-
-                            <option value="">
-                                Selecciona una opción
-                            </option>
-
-                            <option value="RETIRO">
-                                Retiro
-                            </option>
-
-                            <option value="DESPACHO">
-                                Despacho
-                            </option>
-
-                        </select>
-
-                    </div>
-
+                    <div class="campo"><label for="cliente">Nombre completo</label><input type="text" id="cliente" required placeholder="Ej: María González"></div>
+                    <div class="campo"><label for="email">Correo electrónico</label><input type="email" id="email" required placeholder="correo@ejemplo.cl"></div>
+                    <div class="campo"><label for="telefono">Teléfono</label><input type="tel" id="telefono" required placeholder="Ej: +56 9 1234 5678"></div>
+                    <div class="campo"><label for="modalidadEntrega">Modalidad de entrega</label><select id="modalidadEntrega" required><option value="">Selecciona una opción</option><option value="RETIRO">Retiro</option><option value="DESPACHO">Despacho</option></select></div>
+                    <div class="campo campo-despacho" id="campoDireccion" style="display:none;"><label for="direccionEntrega">Dirección de despacho</label><input type="text" id="direccionEntrega" placeholder="Calle, número, departamento/casa"></div>
+                    <div class="campo campo-despacho" id="campoComuna" style="display:none;"><label for="comunaEntrega">Comuna</label><input type="text" id="comunaEntrega" placeholder="Ej: Padre Hurtado"></div>
                 </div>
-
-                <div
-                    id="detalleProducto"
-                    class="detalle-producto-cliente"
-                ></div>
-
-                <div class="acciones-formulario">
-
-                    <button
-                        type="submit"
-                        class="boton-principal"
-                    >
-                        Crear pedido
-                    </button>
-
-                </div>
-
+                <div class="acciones-formulario"><button type="submit" class="boton-principal">Crear pedido</button></div>
             </form>
-
-            <div
-                id="mensajeCliente"
-                class="mensaje"
-            ></div>
-
+            <div id="mensajeCliente" class="mensaje"></div>
         </section>
 
-        <!-- RESULTADO DEL PEDIDO -->
-
-        <section
-            id="resultadoPedido"
-            class="panel"
-            style="display: none;"
-        >
-
-            <div class="panel-titulo">
-
-                <div>
-
-                    <span class="numero-seccion">
-                        03
-                    </span>
-
-                    <div>
-
-                        <h3>
-                            Pedido registrado
-                        </h3>
-
-                        <p>
-                            Guarda tu código para consultar
-                            fácilmente el estado de la compra.
-                        </p>
-
-                    </div>
-
-                </div>
-
+        <section id="resultadoPedido" class="panel" style="display:none;">
+            <div class="panel-titulo"><div><span class="numero-seccion">04</span><div><h3>Pedido registrado</h3><p>Guarda tu código y adjunta el comprobante cuando realices la transferencia.</p></div></div></div>
+            <div class="resultado-cliente resultado-cliente-ampliado">
+                <div><p>Código</p><strong id="codigoPedidoCliente">-</strong></div>
+                <div><p>Estado</p><strong id="estadoPedidoCliente">-</strong></div>
+                <div><p>Total</p><strong id="totalPedidoCliente">$0</strong></div>
             </div>
-
-            <div class="resultado-cliente">
-
-                <div>
-
-                    <p>
-                        Código del pedido
-                    </p>
-
-                    <strong id="codigoPedidoCliente">
-                        -
-                    </strong>
-
-                </div>
-
-                <div>
-
-                    <p>
-                        Estado
-                    </p>
-
-                    <strong id="estadoPedidoCliente">
-                        -
-                    </strong>
-
-                </div>
-
-            </div>
-
+            <div class="aviso-pago"><strong>Pago por transferencia</strong><p>Realiza la transferencia utilizando los datos bancarios entregados por Mapuescuela. Luego adjunta el comprobante para que un voluntario pueda revisarlo.</p></div>
+            <form id="formComprobante" class="form-comprobante">
+                <div class="campo"><label for="archivoComprobante">Comprobante (imagen o PDF, máximo 5 MB)</label><input type="file" id="archivoComprobante" accept="image/*,application/pdf" required></div>
+                <div class="acciones-formulario"><button type="submit" class="boton-principal">Adjuntar comprobante</button></div>
+            </form>
+            <div id="mensajeComprobante" class="mensaje"></div>
         </section>
-
-        <!-- CONSULTAR PEDIDOS -->
 
         <section class="panel">
-
-            <div class="panel-titulo">
-
-                <div>
-
-                    <span class="numero-seccion">
-                        04
-                    </span>
-
-                    <div>
-
-                        <h3>
-                            Consultar mis pedidos
-                        </h3>
-
-                        <p>
-                            Puedes buscar utilizando el nombre
-                            del comprador o el código del pedido.
-                        </p>
-
-                    </div>
-
-                </div>
-
-            </div>
-
+            <div class="panel-titulo"><div><span class="numero-seccion">05</span><div><h3>Consultar pedido</h3><p>Busca por código, nombre, correo o teléfono.</p></div></div></div>
             <form id="formConsultarPedido">
-
-                <div class="campo">
-
-                    <label for="consultaPedido">
-                        Nombre o código del pedido
-                    </label>
-
-                    <input
-                        type="text"
-                        id="consultaPedido"
-                        placeholder="Ej: María González o MARIA-000008"
-                        required
-                    >
-
-                </div>
-
-                <div class="acciones-formulario">
-
-                    <button
-                        type="submit"
-                        class="boton-principal"
-                    >
-                        Buscar pedidos
-                    </button>
-
-                </div>
-
+                <div class="campo"><label for="consultaPedido">Dato de búsqueda</label><input type="text" id="consultaPedido" required placeholder="Ej: MARIA-000008"></div>
+                <div class="acciones-formulario"><button type="submit" class="boton-principal">Buscar pedido</button></div>
             </form>
-
-            <div
-                id="mensajeConsulta"
-                class="mensaje"
-            ></div>
-
-            <div
-                id="listaPedidosCliente"
-                class="productos-cliente"
-            ></div>
-
+            <div id="mensajeConsulta" class="mensaje"></div>
+            <div id="listaPedidosCliente" class="lista-pedidos-cliente"></div>
         </section>
-
     </main>
 
     <script src="app-cliente.js"></script>
-
 </body>
-
 </html>

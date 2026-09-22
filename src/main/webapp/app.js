@@ -1,16 +1,24 @@
-const API_PEDIDOS =
-    "webapi/pedidos";
-
 const API_PRODUCTOS =
     "webapi/productos";
+
+const API_PEDIDOS =
+    "webapi/pedidos";
 
 const API_AUTH =
     "webapi/auth";
 
-
 const STOCK_BAJO =
     5;
 
+
+/* =========================================================
+   ELEMENTOS
+   ========================================================= */
+
+const tablaProductos =
+    document.getElementById(
+        "tablaProductos"
+    );
 
 const tablaPedidosActivos =
     document.getElementById(
@@ -25,6 +33,62 @@ const tablaPedidosCancelados =
 const tablaPedidosCompletados =
     document.getElementById(
         "tablaPedidosCompletados"
+    );
+
+
+const formProducto =
+    document.getElementById(
+        "formProducto"
+    );
+
+const productoEditarId =
+    document.getElementById(
+        "productoEditarId"
+    );
+
+const nombreProducto =
+    document.getElementById(
+        "nombreProducto"
+    );
+
+const categoriaProducto =
+    document.getElementById(
+        "categoriaProducto"
+    );
+
+const precioProducto =
+    document.getElementById(
+        "precioProducto"
+    );
+
+const stockProducto =
+    document.getElementById(
+        "stockProducto"
+    );
+
+const imagenProducto =
+    document.getElementById(
+        "imagenProducto"
+    );
+
+const descripcionProducto =
+    document.getElementById(
+        "descripcionProducto"
+    );
+
+const btnGuardarProducto =
+    document.getElementById(
+        "btnGuardarProducto"
+    );
+
+const btnCancelarEdicion =
+    document.getElementById(
+        "btnCancelarEdicion"
+    );
+
+const mensajeProducto =
+    document.getElementById(
+        "mensajeProducto"
     );
 
 
@@ -54,19 +118,19 @@ const totalActivos =
         "totalActivos"
     );
 
-const totalCancelados =
-    document.getElementById(
-        "totalCancelados"
-    );
-
 const totalCompletados =
     document.getElementById(
         "totalCompletados"
     );
 
-const totalProductosActivos =
+const totalCancelados =
     document.getElementById(
-        "totalProductosActivos"
+        "totalCancelados"
+    );
+
+const totalProductos =
+    document.getElementById(
+        "totalProductos"
     );
 
 const totalStockBajo =
@@ -75,43 +139,63 @@ const totalStockBajo =
     );
 
 
-const formProducto =
+const panelDetallePedido =
     document.getElementById(
-        "formProducto"
+        "panelDetallePedido"
     );
 
-const tablaProductos =
+const tituloDetallePedido =
     document.getElementById(
-        "tablaProductos"
+        "tituloDetallePedido"
     );
 
-const mensajeProducto =
+const detallePedidoAdmin =
     document.getElementById(
-        "mensajeProducto"
+        "detallePedidoAdmin"
     );
 
-const btnGuardarProducto =
+const btnCerrarDetalle =
     document.getElementById(
-        "btnGuardarProducto"
-    );
-
-const btnCancelarEdicion =
-    document.getElementById(
-        "btnCancelarEdicion"
+        "btnCerrarDetalle"
     );
 
 
-let pedidosGuardados =
-    [];
+const formDespacho =
+    document.getElementById(
+        "formDespacho"
+    );
+
+const despachoPedidoId =
+    document.getElementById(
+        "despachoPedidoId"
+    );
+
+const empresaTransporte =
+    document.getElementById(
+        "empresaTransporte"
+    );
+
+const numeroSeguimiento =
+    document.getElementById(
+        "numeroSeguimiento"
+    );
+
+const fechaEnvio =
+    document.getElementById(
+        "fechaEnvio"
+    );
+
+const mensajeDespacho =
+    document.getElementById(
+        "mensajeDespacho"
+    );
+
 
 let productosGuardados =
     [];
 
-let productoEditandoId =
-    null;
-
-let productoEditandoActivo =
-    true;
+let pedidosGuardados =
+    [];
 
 
 /* =========================================================
@@ -120,23 +204,30 @@ let productoEditandoActivo =
 
 document.addEventListener(
     "DOMContentLoaded",
-    async () => {
-
-        const autenticado =
-            await verificarSesion();
-
-
-        if (!autenticado) {
-
-            return;
-        }
-
-
-        await cargarProductos();
-
-        await cargarPedidos();
-    }
+    iniciar
 );
+
+
+async function iniciar() {
+
+    const sesion =
+        await verificarSesion();
+
+
+    if (!sesion) {
+
+        window.location.href =
+            "login.html";
+
+        return;
+    }
+
+
+    await Promise.all([
+        cargarProductos(),
+        cargarPedidos()
+    ]);
+}
 
 
 /* =========================================================
@@ -149,36 +240,28 @@ async function verificarSesion() {
 
         const response =
             await fetch(
-                `${API_AUTH}/session`
+                `${API_AUTH}/session`,
+                {
+                    credentials:
+                        "same-origin"
+                }
             );
 
 
         if (!response.ok) {
 
-            window.location.href =
-                "login.html";
-
             return false;
         }
 
 
-        const resultado =
+        const data =
             await response.json();
 
 
-        if (
-            resultado.autenticado
-            !== true
-        ) {
-
-            window.location.href =
-                "login.html";
-
-            return false;
-        }
-
-
-        return true;
+        return (
+            data.autenticado
+            === true
+        );
 
 
     } catch (error) {
@@ -187,10 +270,6 @@ async function verificarSesion() {
             "No fue posible verificar la sesión.",
             error
         );
-
-
-        window.location.href =
-            "login.html";
 
         return false;
     }
@@ -209,203 +288,38 @@ btnInicio.addEventListener(
 
 btnCerrarSesion.addEventListener(
     "click",
-    cerrarSesion
-);
+    async () => {
 
+        try {
 
-async function cerrarSesion() {
+            await fetch(
+                `${API_AUTH}/logout`,
+                {
+                    method:
+                        "POST",
 
-    try {
+                    credentials:
+                        "same-origin"
+                }
+            );
 
-        await fetch(
-            `${API_AUTH}/logout`,
-            {
-                method:
-                    "POST"
-            }
-        );
+        } catch (error) {
 
+            console.error(
+                error
+            );
+        }
 
-    } catch (error) {
-
-        console.error(
-            "No fue posible cerrar la sesión.",
-            error
-        );
-
-
-    } finally {
 
         window.location.href =
             "login.html";
     }
-}
+);
 
 
 /* =========================================================
    PRODUCTOS
    ========================================================= */
-
-formProducto.addEventListener(
-    "submit",
-    async event => {
-
-        event.preventDefault();
-
-
-        const editando =
-            productoEditandoId !== null;
-
-
-        const nombre =
-            document
-                .getElementById(
-                    "nombreProducto"
-                )
-                .value
-                .trim();
-
-
-        const descripcion =
-            document
-                .getElementById(
-                    "descripcionProducto"
-                )
-                .value
-                .trim();
-
-
-        const precio =
-            Number(
-                document
-                    .getElementById(
-                        "precioProducto"
-                    )
-                    .value
-            );
-
-
-        const stock =
-            Number(
-                document
-                    .getElementById(
-                        "stockProducto"
-                    )
-                    .value
-            );
-
-
-        const producto = {
-
-            nombre,
-            descripcion,
-            precio,
-            stock,
-
-            activo:
-                editando
-                    ? productoEditandoActivo
-                    : true
-        };
-
-
-        try {
-
-            let response;
-
-
-            if (!editando) {
-
-                response =
-                    await fetch(
-                        API_PRODUCTOS,
-                        {
-
-                            method:
-                                "POST",
-
-                            headers: {
-
-                                "Content-Type":
-                                    "application/json"
-                            },
-
-                            body:
-                                JSON.stringify(
-                                    producto
-                                )
-                        }
-                    );
-
-            } else {
-
-                response =
-                    await fetch(
-                        `${API_PRODUCTOS}/${productoEditandoId}`,
-                        {
-
-                            method:
-                                "PUT",
-
-                            headers: {
-
-                                "Content-Type":
-                                    "application/json"
-                            },
-
-                            body:
-                                JSON.stringify(
-                                    producto
-                                )
-                        }
-                    );
-            }
-
-
-            const respuesta =
-                await response.json();
-
-
-            if (!response.ok) {
-
-                throw new Error(
-                    respuesta.mensaje
-                    ||
-                    "No fue posible guardar el producto."
-                );
-            }
-
-
-            limpiarFormularioProducto();
-
-
-            await cargarProductos();
-
-
-            mostrarMensajeProducto(
-                editando
-                    ? "Producto actualizado correctamente."
-                    : "Producto agregado correctamente.",
-                "exito"
-            );
-
-
-        } catch (error) {
-
-            mostrarMensajeProducto(
-                error.message,
-                "error"
-            );
-        }
-    }
-);
-
-
-btnCancelarEdicion.addEventListener(
-    "click",
-    limpiarFormularioProducto
-);
-
 
 async function cargarProductos() {
 
@@ -420,7 +334,7 @@ async function cargarProductos() {
         if (!response.ok) {
 
             throw new Error(
-                "No fue posible cargar los productos."
+                "No fue posible cargar productos."
             );
         }
 
@@ -429,78 +343,50 @@ async function cargarProductos() {
             await response.json();
 
 
-        mostrarProductos(
-            productosGuardados
-        );
+        renderProductos();
 
-
-        totalProductosActivos.textContent =
-            productosGuardados.filter(
-                producto =>
-                    producto.activo
-            ).length;
-
-
-        totalStockBajo.textContent =
-            productosGuardados.filter(
-                producto =>
-                    producto.activo
-                    &&
-                    Number(
-                        producto.stock
-                    ) <= STOCK_BAJO
-            ).length;
+        actualizarResumen();
 
 
     } catch (error) {
 
-        console.error(
-            error
-        );
-
-
-        tablaProductos.innerHTML = `
-
+        tablaProductos.innerHTML =
+            `
             <tr>
-
-                <td colspan="6">
-                    No fue posible cargar los productos.
+                <td colspan="7">
+                    ${escaparHtml(error.message)}
                 </td>
-
             </tr>
-        `;
+            `;
     }
 }
 
 
-function mostrarProductos(
-    productos
-) {
+function renderProductos() {
 
     tablaProductos.innerHTML =
         "";
 
 
     if (
-        productos.length === 0
+        productosGuardados.length
+        === 0
     ) {
 
-        tablaProductos.innerHTML = `
-
+        tablaProductos.innerHTML =
+            `
             <tr>
-
-                <td colspan="6">
-                    No existen productos registrados.
+                <td colspan="7">
+                    No hay productos registrados.
                 </td>
-
             </tr>
-        `;
+            `;
 
         return;
     }
 
 
-    productos.forEach(
+    productosGuardados.forEach(
         producto => {
 
             const fila =
@@ -509,87 +395,101 @@ function mostrarProductos(
                 );
 
 
-            const stockEsBajo =
-                producto.activo
-                &&
-                Number(
-                    producto.stock
-                ) <= STOCK_BAJO;
-
-
-            fila.innerHTML = `
-
+            fila.innerHTML =
+                `
                 <td>
-                    #${producto.id}
+                    ${producto.id}
                 </td>
 
                 <td>
-
                     <strong>
-                        ${producto.nombre}
+                        ${escaparHtml(producto.nombre)}
                     </strong>
 
                     <br>
 
                     <small>
-                        ${producto.descripcion || ""}
+                        ${escaparHtml(producto.descripcion || "")}
                     </small>
-
                 </td>
 
                 <td>
-                    $${formatearPrecio(
-                        producto.precio
-                    )}
+                    ${escaparHtml(producto.categoria || "-")}
                 </td>
 
                 <td>
+                    $${formatearPrecio(producto.precio)}
+                </td>
 
+                <td>
                     ${
-                        stockEsBajo
-                            ? `⚠ ${producto.stock}`
-                            : producto.stock
+                        producto.stock <= STOCK_BAJO
+                            ? "⚠ "
+                            : ""
                     }
-
+                    ${producto.stock}
                 </td>
 
                 <td>
-
                     ${
                         producto.activo
                             ? "Activo"
                             : "Inactivo"
                     }
-
                 </td>
 
                 <td>
 
-                    <button
-                        class="boton-guardar"
-                        onclick="editarProducto(${producto.id})"
-                    >
-                        Editar
-                    </button>
+                    <div class="acciones-tabla">
 
-                    <button
-                        class="boton-guardar"
-                        onclick="cambiarEstadoProducto(
-                            ${producto.id},
-                            ${producto.activo}
-                        )"
-                    >
+                        <button
+                            class="boton-tabla"
+                            data-accion="editar"
+                        >
+                            Editar
+                        </button>
 
-                        ${
-                            producto.activo
-                                ? "Desactivar"
-                                : "Activar"
-                        }
+                        <button
+                            class="boton-tabla"
+                            data-accion="estado"
+                        >
+                            ${
+                                producto.activo
+                                    ? "Desactivar"
+                                    : "Activar"
+                            }
+                        </button>
 
-                    </button>
+                    </div>
 
                 </td>
-            `;
+                `;
+
+
+            fila
+                .querySelector(
+                    '[data-accion="editar"]'
+                )
+                .addEventListener(
+                    "click",
+                    () =>
+                        editarProducto(
+                            producto
+                        )
+                );
+
+
+            fila
+                .querySelector(
+                    '[data-accion="estado"]'
+                )
+                .addEventListener(
+                    "click",
+                    () =>
+                        cambiarEstadoProducto(
+                            producto
+                        )
+                );
 
 
             tablaProductos.appendChild(
@@ -600,61 +500,174 @@ function mostrarProductos(
 }
 
 
+/* =========================================================
+   GUARDAR PRODUCTO
+   ========================================================= */
+
+formProducto.addEventListener(
+    "submit",
+    async event => {
+
+        event.preventDefault();
+
+
+        const id =
+            Number(
+                productoEditarId.value
+                || 0
+            );
+
+
+        const editando =
+            id > 0;
+
+
+        const existente =
+            productosGuardados.find(
+                producto =>
+                    producto.id
+                    === id
+            );
+
+
+        const producto = {
+
+            nombre:
+                nombreProducto
+                    .value
+                    .trim(),
+
+            categoria:
+                categoriaProducto
+                    .value
+                    .trim(),
+
+            precio:
+                Number(
+                    precioProducto.value
+                ),
+
+            stock:
+                Number(
+                    stockProducto.value
+                ),
+
+            imagenUrl:
+                imagenProducto
+                    .value
+                    .trim(),
+
+            descripcion:
+                descripcionProducto
+                    .value
+                    .trim(),
+
+            activo:
+                editando
+                    ? existente.activo
+                    : true
+        };
+
+
+        try {
+
+            const response =
+                await fetch(
+
+                    editando
+                        ? `${API_PRODUCTOS}/${id}`
+                        : API_PRODUCTOS,
+
+                    {
+                        method:
+                            editando
+                                ? "PUT"
+                                : "POST",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                        body:
+                            JSON.stringify(
+                                producto
+                            )
+                    }
+                );
+
+
+            const data =
+                await response.json();
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    data.mensaje
+                    || "No fue posible guardar el producto."
+                );
+            }
+
+
+            limpiarFormularioProducto();
+
+
+            mostrarMensaje(
+
+                mensajeProducto,
+
+                editando
+                    ? "Producto actualizado correctamente."
+                    : "Producto creado correctamente.",
+
+                "exito"
+            );
+
+
+            await cargarProductos();
+
+
+        } catch (error) {
+
+            mostrarMensaje(
+                mensajeProducto,
+                error.message,
+                "error"
+            );
+        }
+    }
+);
+
+
+/* =========================================================
+   EDITAR PRODUCTO
+   ========================================================= */
+
 function editarProducto(
-    id
+    producto
 ) {
 
-    const producto =
-        productosGuardados.find(
-            p =>
-                p.id === id
-        );
-
-
-    if (!producto) {
-
-        return;
-    }
-
-
-    productoEditandoId =
+    productoEditarId.value =
         producto.id;
 
+    nombreProducto.value =
+        producto.nombre || "";
 
-    productoEditandoActivo =
-        producto.activo;
+    categoriaProducto.value =
+        producto.categoria || "";
 
+    precioProducto.value =
+        producto.precio || 0;
 
-    document
-        .getElementById(
-            "nombreProducto"
-        )
-        .value =
-        producto.nombre;
+    stockProducto.value =
+        producto.stock || 0;
 
+    imagenProducto.value =
+        producto.imagenUrl || "";
 
-    document
-        .getElementById(
-            "descripcionProducto"
-        )
-        .value =
+    descripcionProducto.value =
         producto.descripcion || "";
-
-
-    document
-        .getElementById(
-            "precioProducto"
-        )
-        .value =
-        producto.precio;
-
-
-    document
-        .getElementById(
-            "stockProducto"
-        )
-        .value =
-        producto.stock;
 
 
     btnGuardarProducto.textContent =
@@ -665,48 +678,83 @@ function editarProducto(
         "inline-block";
 
 
-    mostrarMensajeProducto(
-        "",
-        ""
+    formProducto.scrollIntoView(
+        {
+            behavior:
+                "smooth",
+
+            block:
+                "start"
+        }
     );
 }
 
 
+btnCancelarEdicion.addEventListener(
+    "click",
+    limpiarFormularioProducto
+);
+
+
+function limpiarFormularioProducto() {
+
+    formProducto.reset();
+
+    productoEditarId.value =
+        "";
+
+    btnGuardarProducto.textContent =
+        "Crear producto";
+
+    btnCancelarEdicion.style.display =
+        "none";
+}
+
+
+/* =========================================================
+   ACTIVAR / DESACTIVAR PRODUCTO
+   ========================================================= */
+
 async function cambiarEstadoProducto(
-    id,
-    estadoActual
+    producto
 ) {
 
     try {
 
         const response =
             await fetch(
-                `${API_PRODUCTOS}/${id}/estado`,
-                {
 
+                `${API_PRODUCTOS}/${producto.id}/estado`,
+
+                {
                     method:
                         "PUT",
 
                     headers: {
-
                         "Content-Type":
                             "application/json"
                     },
 
                     body:
-                        JSON.stringify({
-
-                            activo:
-                                !estadoActual
-                        })
+                        JSON.stringify(
+                            {
+                                activo:
+                                    !producto.activo
+                            }
+                        )
                 }
             );
+
+
+        const data =
+            await response.json();
 
 
         if (!response.ok) {
 
             throw new Error(
-                "No fue posible cambiar el estado del producto."
+                data.mensaje
+                || "No fue posible cambiar el estado."
             );
         }
 
@@ -714,41 +762,12 @@ async function cambiarEstadoProducto(
         await cargarProductos();
 
 
-        mostrarMensajeProducto(
-            "Estado del producto actualizado correctamente.",
-            "exito"
-        );
-
-
     } catch (error) {
 
-        mostrarMensajeProducto(
-            error.message,
-            "error"
+        alert(
+            error.message
         );
     }
-}
-
-
-function limpiarFormularioProducto() {
-
-    formProducto.reset();
-
-
-    productoEditandoId =
-        null;
-
-
-    productoEditandoActivo =
-        true;
-
-
-    btnGuardarProducto.textContent =
-        "+ Agregar producto";
-
-
-    btnCancelarEdicion.style.display =
-        "none";
 }
 
 
@@ -791,12 +810,22 @@ async function cargarPedidos() {
         console.error(
             error
         );
+
+
+        tablaPedidosActivos.innerHTML =
+            `
+            <tr>
+                <td colspan="8">
+                    ${escaparHtml(error.message)}
+                </td>
+            </tr>
+            `;
     }
 }
 
 
 /* =========================================================
-   SEPARAR PEDIDOS
+   CLASIFICACION PEDIDOS
    ========================================================= */
 
 function mostrarPedidosSeparados(
@@ -836,20 +865,22 @@ function mostrarPedidosSeparados(
         );
 
 
-    mostrarPedidosActivos(
+    renderPedidosActivos(
         activos
     );
 
 
-    mostrarPedidosHistoricos(
+    renderPedidosHistoricos(
         tablaPedidosCancelados,
-        cancelados
+        cancelados,
+        "No existen pedidos cancelados o rechazados."
     );
 
 
-    mostrarPedidosHistoricos(
+    renderPedidosHistoricos(
         tablaPedidosCompletados,
-        completados
+        completados,
+        "No existen pedidos completados."
     );
 }
 
@@ -858,7 +889,7 @@ function mostrarPedidosSeparados(
    PEDIDOS ACTIVOS
    ========================================================= */
 
-function mostrarPedidosActivos(
+function renderPedidosActivos(
     pedidos
 ) {
 
@@ -870,16 +901,14 @@ function mostrarPedidosActivos(
         pedidos.length === 0
     ) {
 
-        tablaPedidosActivos.innerHTML = `
-
+        tablaPedidosActivos.innerHTML =
+            `
             <tr>
-
-                <td colspan="7">
+                <td colspan="8">
                     No existen pedidos activos.
                 </td>
-
             </tr>
-        `;
+            `;
 
         return;
     }
@@ -889,12 +918,6 @@ function mostrarPedidosActivos(
         pedido => {
 
             const fila =
-                document.createElement(
-                    "tr"
-                );
-
-
-            fila.innerHTML =
                 crearFilaPedido(
                     pedido,
                     true
@@ -910,12 +933,13 @@ function mostrarPedidosActivos(
 
 
 /* =========================================================
-   PEDIDOS HISTORICOS
+   HISTORIAL PEDIDOS
    ========================================================= */
 
-function mostrarPedidosHistoricos(
+function renderPedidosHistoricos(
     tabla,
-    pedidos
+    pedidos,
+    mensajeVacio
 ) {
 
     tabla.innerHTML =
@@ -926,16 +950,14 @@ function mostrarPedidosHistoricos(
         pedidos.length === 0
     ) {
 
-        tabla.innerHTML = `
-
+        tabla.innerHTML =
+            `
             <tr>
-
-                <td colspan="6">
-                    No existen pedidos en esta categoría.
+                <td colspan="8">
+                    ${mensajeVacio}
                 </td>
-
             </tr>
-        `;
+            `;
 
         return;
     }
@@ -945,12 +967,6 @@ function mostrarPedidosHistoricos(
         pedido => {
 
             const fila =
-                document.createElement(
-                    "tr"
-                );
-
-
-            fila.innerHTML =
                 crearFilaPedido(
                     pedido,
                     false
@@ -974,29 +990,152 @@ function crearFilaPedido(
     editable
 ) {
 
-    return `
+    const fila =
+        document.createElement(
+            "tr"
+        );
 
+
+    const productos =
+        (
+            pedido.items
+            || []
+        )
+            .map(
+                item =>
+                    `
+                    ${escaparHtml(item.producto)}
+                    x${item.cantidad}
+                    `
+            )
+            .join(
+                "<br>"
+            )
+        ||
+        escaparHtml(
+            pedido.producto
+            || "-"
+        );
+
+
+    const comprobante =
+
+        pedido.comprobanteAdjunto
+
+            ? `
+                <button
+                    class="boton-tabla"
+                    data-accion="comprobante"
+                >
+                    Ver
+                </button>
+              `
+
+            : `
+                <span class="texto-pendiente">
+                    Pendiente
+                </span>
+              `;
+
+
+    let gestion;
+
+
+    if (editable) {
+
+        gestion =
+            `
+            <div class="acciones-tabla">
+
+                <button
+                    class="boton-tabla"
+                    data-accion="guardar"
+                >
+                    Guardar estado
+                </button>
+
+                <button
+                    class="boton-tabla"
+                    data-accion="detalle"
+                >
+                    Detalle
+                </button>
+
+            </div>
+            `;
+
+    } else {
+
+        gestion =
+            `
+            <button
+                class="boton-tabla"
+                data-accion="detalle"
+            >
+                Ver detalle
+            </button>
+            `;
+    }
+
+
+    fila.innerHTML =
+        `
         <td>
 
-            ${
-                pedido.codigoPedido
-                ||
-                `#${pedido.id}`
-            }
+            <strong>
+                ${
+                    escaparHtml(
+                        pedido.codigoPedido
+                        || `#${pedido.id}`
+                    )
+                }
+            </strong>
 
         </td>
 
-        <td>
-            ${pedido.cliente || "-"}
-        </td>
 
         <td>
-            ${pedido.producto || "-"}
+
+            ${escaparHtml(
+                pedido.cliente
+                || "-"
+            )}
+
+            <br>
+
+            <small>
+
+                ${escaparHtml(
+                    pedido.email
+                    || "-"
+                )}
+
+                <br>
+
+                ${escaparHtml(
+                    pedido.telefono
+                    || "-"
+                )}
+
+            </small>
+
         </td>
 
+
         <td>
-            ${pedido.cantidad || "-"}
+            ${productos}
         </td>
+
+
+        <td>
+
+            $${formatearPrecio(
+                pedido.total
+                || 0
+            )}
+
+        </td>
+
 
         <td>
 
@@ -1006,96 +1145,157 @@ function crearFilaPedido(
 
         </td>
 
+
         <td>
 
-            ${formatearEstado(
-                pedido.estado
-            )}
+            ${
+                editable
 
-        </td>
-
-        ${
-            editable
-                ? `
-
-                    <td>
-
-                        <select
-                            id="estado-${pedido.id}"
-                        >
+                    ? `
+                        <select class="selector-estado">
 
                             ${crearOpcionesEstado(
                                 pedido
                             )}
 
                         </select>
+                      `
 
-                        <button
-                            class="boton-guardar"
-                            onclick="actualizarEstado(${pedido.id})"
-                        >
-                            Guardar
-                        </button>
+                    : `
+                        <strong>
+                            ${formatearEstado(
+                                pedido.estado
+                            )}
+                        </strong>
+                      `
+            }
 
-                    </td>
+        </td>
 
-                `
-                : ""
-        }
-    `;
+
+        <td>
+            ${comprobante}
+        </td>
+
+
+        <td>
+            ${gestion}
+        </td>
+        `;
+
+
+    const btnDetalle =
+        fila.querySelector(
+            '[data-accion="detalle"]'
+        );
+
+
+    btnDetalle.addEventListener(
+        "click",
+        () =>
+            mostrarDetallePedido(
+                pedido.id
+            )
+    );
+
+
+    const btnComprobante =
+        fila.querySelector(
+            '[data-accion="comprobante"]'
+        );
+
+
+    if (btnComprobante) {
+
+        btnComprobante.addEventListener(
+            "click",
+            () =>
+                verComprobante(
+                    pedido.id
+                )
+        );
+    }
+
+
+    if (editable) {
+
+        const btnGuardar =
+            fila.querySelector(
+                '[data-accion="guardar"]'
+            );
+
+
+        const selectorEstado =
+            fila.querySelector(
+                ".selector-estado"
+            );
+
+
+        btnGuardar.addEventListener(
+            "click",
+            () =>
+                actualizarEstado(
+
+                    pedido.id,
+
+                    selectorEstado.value
+                )
+        );
+    }
+
+
+    return fila;
 }
 
 
 /* =========================================================
-   ESTADOS DE PEDIDO
+   OPCIONES ESTADO
    ========================================================= */
 
 function crearOpcionesEstado(
     pedido
 ) {
 
-    let estados =
-        [];
+    const estadosBase = [
+
+        "PENDIENTE_PAGO",
+
+        "PAGO_REVISION",
+
+        "PAGADO",
+
+        "RECHAZADO",
+
+        "PREPARANDO"
+    ];
 
 
-    if (
+    const estadoEntrega =
+
         pedido.modalidadEntrega
         === "RETIRO"
-    ) {
 
-        estados = [
+            ? [
+                "LISTO_RETIRO"
+              ]
 
-            "PENDIENTE_PAGO",
-            "PAGADO",
-            "RECHAZADO",
-            "PREPARANDO",
-            "LISTO_RETIRO",
-            "ENTREGADO",
-            "CANCELADO"
-
-        ];
+            : [
+                "DESPACHADO"
+              ];
 
 
-    } else {
-
-        estados = [
-
-            "PENDIENTE_PAGO",
-            "PAGADO",
-            "RECHAZADO",
-            "PREPARANDO",
-            "DESPACHADO",
-            "ENTREGADO",
-            "CANCELADO"
-
-        ];
-    }
-
-
-    return estados
+    return estadosBase
+        .concat(
+            estadoEntrega,
+            [
+                "ENTREGADO",
+                "CANCELADO"
+            ]
+        )
         .map(
-            estado => `
+            estado =>
 
+                `
                 <option
                     value="${estado}"
                     ${
@@ -1104,94 +1304,672 @@ function crearOpcionesEstado(
                             : ""
                     }
                 >
-
-                    ${formatearEstado(
-                        estado
-                    )}
-
+                    ${formatearEstado(estado)}
                 </option>
-
-            `
+                `
         )
-        .join("");
+        .join(
+            ""
+        );
 }
 
 
+/* =========================================================
+   ACTUALIZAR ESTADO
+   ========================================================= */
+
 async function actualizarEstado(
-    id
+    id,
+    estado
 ) {
-
-    const selector =
-        document.getElementById(
-            `estado-${id}`
-        );
-
-
-    if (!selector) {
-
-        return;
-    }
-
-
-    const estado =
-        selector.value;
-
 
     try {
 
-        const response =
+        let response =
             await fetch(
-                `${API_PEDIDOS}/${id}/estado`,
-                {
 
+                `${API_PEDIDOS}/${id}/estado`,
+
+                {
                     method:
                         "PUT",
 
                     headers: {
-
                         "Content-Type":
                             "application/json"
                     },
 
                     body:
-                        JSON.stringify({
-                            estado
-                        })
+                        JSON.stringify(
+                            {
+                                estado
+                            }
+                        )
                 }
             );
 
 
-        const resultado =
+        let data =
             await response.json();
 
 
         if (!response.ok) {
 
             throw new Error(
-                resultado.mensaje
-                ||
-                "No fue posible actualizar el pedido."
+                data.mensaje
+                || "No fue posible actualizar el estado."
             );
         }
 
 
-        await cargarPedidos();
+        /*
+         * Cuando el pedido pasa a PAGADO,
+         * se solicita la actualización
+         * de inventario.
+         */
 
-        await cargarProductos();
+        if (
+            estado === "PAGADO"
+        ) {
+
+            response =
+                await fetch(
+
+                    `${API_PEDIDOS}/${id}/inventario`,
+
+                    {
+                        method:
+                            "PUT",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        }
+                    }
+                );
+
+
+            data =
+                await response.json();
+
+
+            if (!response.ok) {
+
+                throw new Error(
+
+                    data.mensaje
+
+                    ||
+                    "El estado cambió, pero no fue posible descontar inventario."
+                );
+            }
+        }
+
+
+        await Promise.all([
+            cargarPedidos(),
+            cargarProductos()
+        ]);
 
 
     } catch (error) {
-
-        console.error(
-            error
-        );
-
 
         alert(
             error.message
         );
     }
 }
+
+
+/* =========================================================
+   COMPROBANTE
+   ========================================================= */
+
+async function verComprobante(
+    id
+) {
+
+    try {
+
+        const response =
+            await fetch(
+                `${API_PEDIDOS}/${id}/comprobante`
+            );
+
+
+        const data =
+            await response.json();
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                data.mensaje
+                || "No fue posible obtener el comprobante."
+            );
+        }
+
+
+        const binario =
+            atob(
+                data.datosBase64
+            );
+
+
+        const bytes =
+            new Uint8Array(
+                binario.length
+            );
+
+
+        for (
+            let i = 0;
+            i < binario.length;
+            i++
+        ) {
+
+            bytes[i] =
+                binario.charCodeAt(
+                    i
+                );
+        }
+
+
+        const blob =
+            new Blob(
+                [bytes],
+                {
+                    type:
+                        data.tipoContenido
+                        || "application/octet-stream"
+                }
+            );
+
+
+        const url =
+            URL.createObjectURL(
+                blob
+            );
+
+
+        const ventana =
+            window.open(
+                url,
+                "_blank"
+            );
+
+
+        if (!ventana) {
+
+            URL.revokeObjectURL(
+                url
+            );
+
+
+            throw new Error(
+                "El navegador bloqueó la ventana del comprobante."
+            );
+        }
+
+
+        setTimeout(
+            () =>
+                URL.revokeObjectURL(
+                    url
+                ),
+            60000
+        );
+
+
+    } catch (error) {
+
+        alert(
+            error.message
+        );
+    }
+}
+
+
+/* =========================================================
+   DETALLE PEDIDO
+   ========================================================= */
+
+async function mostrarDetallePedido(
+    id
+) {
+
+    try {
+
+        const response =
+            await fetch(
+                `${API_PEDIDOS}/${id}`
+            );
+
+
+        const pedido =
+            await response.json();
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                pedido.mensaje
+                || "No fue posible cargar el pedido."
+            );
+        }
+
+
+        tituloDetallePedido.textContent =
+            `
+            ${
+                pedido.codigoPedido
+                || `#${pedido.id}`
+            }
+            ·
+            ${
+                pedido.cliente
+                || ""
+            }
+            `;
+
+
+        const items =
+            (
+                pedido.items
+                || []
+            )
+                .map(
+                    item =>
+
+                        `
+                        <li>
+                            ${escaparHtml(item.producto)}
+                            x${item.cantidad}
+                            —
+                            $${formatearPrecio(item.subtotal)}
+                        </li>
+                        `
+                )
+                .join(
+                    ""
+                );
+
+
+        detallePedidoAdmin.innerHTML =
+            `
+            <div>
+
+                <span>
+                    Cliente
+                </span>
+
+                <strong>
+                    ${escaparHtml(pedido.cliente || "-")}
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                <span>
+                    Correo
+                </span>
+
+                <strong>
+                    ${escaparHtml(pedido.email || "-")}
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                <span>
+                    Teléfono
+                </span>
+
+                <strong>
+                    ${escaparHtml(pedido.telefono || "-")}
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                <span>
+                    Estado
+                </span>
+
+                <strong>
+                    ${formatearEstado(pedido.estado)}
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                <span>
+                    Modalidad
+                </span>
+
+                <strong>
+                    ${formatearModalidad(pedido.modalidadEntrega)}
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                <span>
+                    Total
+                </span>
+
+                <strong>
+                    $${formatearPrecio(pedido.total || 0)}
+                </strong>
+
+            </div>
+
+
+            <div class="detalle-admin-ancho">
+
+                <span>
+                    Productos
+                </span>
+
+                <ul>
+                    ${
+                        items
+                        ||
+                        `
+                        <li>
+                            ${escaparHtml(pedido.producto || "-")}
+                        </li>
+                        `
+                    }
+                </ul>
+
+            </div>
+
+
+            <div>
+
+                <span>
+                    Comprobante
+                </span>
+
+                <strong>
+
+                    ${
+                        pedido.comprobanteAdjunto
+                            ? "Adjuntado"
+                            : "Pendiente"
+                    }
+
+                </strong>
+
+            </div>
+
+
+            ${
+                pedido.modalidadEntrega
+                === "DESPACHO"
+
+                    ? `
+                        <div class="detalle-admin-ancho">
+
+                            <span>
+                                Dirección de entrega
+                            </span>
+
+                            <strong>
+
+                                ${escaparHtml(
+                                    pedido.direccionEntrega
+                                    || "-"
+                                )}
+
+                                ,
+
+                                ${escaparHtml(
+                                    pedido.comunaEntrega
+                                    || "-"
+                                )}
+
+                            </strong>
+
+                        </div>
+                      `
+
+                    : ""
+            }
+
+
+            ${
+                pedido.empresaTransporte
+
+                    ? `
+                        <div>
+
+                            <span>
+                                Transporte
+                            </span>
+
+                            <strong>
+                                ${escaparHtml(pedido.empresaTransporte)}
+                            </strong>
+
+                        </div>
+                      `
+
+                    : ""
+            }
+
+
+            ${
+                pedido.numeroSeguimiento
+
+                    ? `
+                        <div>
+
+                            <span>
+                                N° seguimiento
+                            </span>
+
+                            <strong>
+                                ${escaparHtml(pedido.numeroSeguimiento)}
+                            </strong>
+
+                        </div>
+                      `
+
+                    : ""
+            }
+
+
+            ${
+                pedido.fechaEnvio
+
+                    ? `
+                        <div>
+
+                            <span>
+                                Fecha de envío
+                            </span>
+
+                            <strong>
+                                ${escaparHtml(pedido.fechaEnvio)}
+                            </strong>
+
+                        </div>
+                      `
+
+                    : ""
+            }
+            `;
+
+
+        despachoPedidoId.value =
+            pedido.id;
+
+
+        empresaTransporte.value =
+            pedido.empresaTransporte
+            || "";
+
+
+        numeroSeguimiento.value =
+            pedido.numeroSeguimiento
+            || "";
+
+
+        fechaEnvio.value =
+            pedido.fechaEnvio
+            || "";
+
+
+        formDespacho.style.display =
+
+            pedido.modalidadEntrega
+            === "DESPACHO"
+
+                ? "block"
+                : "none";
+
+
+        mensajeDespacho.textContent =
+            "";
+
+
+        panelDetallePedido.style.display =
+            "block";
+
+
+        panelDetallePedido.scrollIntoView(
+            {
+                behavior:
+                    "smooth",
+
+                block:
+                    "start"
+            }
+        );
+
+
+    } catch (error) {
+
+        alert(
+            error.message
+        );
+    }
+}
+
+
+/* =========================================================
+   CERRAR DETALLE
+   ========================================================= */
+
+btnCerrarDetalle.addEventListener(
+    "click",
+    () => {
+
+        panelDetallePedido.style.display =
+            "none";
+    }
+);
+
+
+/* =========================================================
+   DESPACHO
+   ========================================================= */
+
+formDespacho.addEventListener(
+    "submit",
+    async event => {
+
+        event.preventDefault();
+
+
+        const id =
+            Number(
+                despachoPedidoId.value
+            );
+
+
+        try {
+
+            const response =
+                await fetch(
+
+                    `${API_PEDIDOS}/${id}/despacho`,
+
+                    {
+                        method:
+                            "PUT",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                        body:
+                            JSON.stringify(
+                                {
+                                    empresaTransporte:
+                                        empresaTransporte
+                                            .value
+                                            .trim(),
+
+                                    numeroSeguimiento:
+                                        numeroSeguimiento
+                                            .value
+                                            .trim(),
+
+                                    fechaEnvio:
+                                        fechaEnvio.value
+                                }
+                            )
+                    }
+                );
+
+
+            const data =
+                await response.json();
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    data.mensaje
+                    || "No fue posible guardar el despacho."
+                );
+            }
+
+
+            mostrarMensaje(
+                mensajeDespacho,
+                "Datos de despacho guardados.",
+                "exito"
+            );
+
+
+            await cargarPedidos();
+
+
+        } catch (error) {
+
+            mostrarMensaje(
+                mensajeDespacho,
+                error.message,
+                "error"
+            );
+        }
+    }
+);
 
 
 /* =========================================================
@@ -1213,50 +1991,47 @@ buscarPedido.addEventListener(
             pedidosGuardados.filter(
                 pedido => {
 
-                    return (
-
+                    const items =
                         (
-                            pedido.codigoPedido
-                            || ""
+                            pedido.items
+                            || []
                         )
-                            .toLowerCase()
-                            .includes(
-                                texto
+                            .map(
+                                item =>
+                                    item.producto
                             )
+                            .join(
+                                " "
+                            );
 
-                        ||
 
-                        (
-                            pedido.cliente
-                            || ""
-                        )
-                            .toLowerCase()
-                            .includes(
-                                texto
+                    return [
+
+                        pedido.codigoPedido,
+
+                        pedido.cliente,
+
+                        pedido.email,
+
+                        pedido.telefono,
+
+                        pedido.producto,
+
+                        pedido.estado,
+
+                        items
+
+                    ].some(
+                        valor =>
+
+                            (
+                                valor
+                                || ""
                             )
-
-                        ||
-
-                        (
-                            pedido.producto
-                            || ""
-                        )
-                            .toLowerCase()
-                            .includes(
-                                texto
-                            )
-
-                        ||
-
-                        (
-                            pedido.estado
-                            || ""
-                        )
-                            .toLowerCase()
-                            .includes(
-                                texto
-                            )
-
+                                .toLowerCase()
+                                .includes(
+                                    texto
+                                )
                     );
                 }
             );
@@ -1269,13 +2044,22 @@ buscarPedido.addEventListener(
 );
 
 
+/* =========================================================
+   ACTUALIZAR
+   ========================================================= */
+
 btnActualizar.addEventListener(
     "click",
     async () => {
 
-        await cargarPedidos();
+        buscarPedido.value =
+            "";
 
-        await cargarProductos();
+
+        await Promise.all([
+            cargarPedidos(),
+            cargarProductos()
+        ]);
     }
 );
 
@@ -1299,6 +2083,14 @@ function actualizarResumen() {
         ).length;
 
 
+    totalCompletados.textContent =
+        pedidosGuardados.filter(
+            pedido =>
+                pedido.estado
+                === "ENTREGADO"
+        ).length;
+
+
     totalCancelados.textContent =
         pedidosGuardados.filter(
             pedido =>
@@ -1311,11 +2103,20 @@ function actualizarResumen() {
         ).length;
 
 
-    totalCompletados.textContent =
-        pedidosGuardados.filter(
-            pedido =>
-                pedido.estado
-                === "ENTREGADO"
+    totalProductos.textContent =
+        productosGuardados.filter(
+            producto =>
+                producto.activo
+        ).length;
+
+
+    totalStockBajo.textContent =
+        productosGuardados.filter(
+            producto =>
+                producto.activo
+                &&
+                producto.stock
+                <= STOCK_BAJO
         ).length;
 }
 
@@ -1325,15 +2126,14 @@ function actualizarResumen() {
    ========================================================= */
 
 function formatearPrecio(
-    precio
+    valor
 ) {
 
     return Number(
-        precio
-    )
-        .toLocaleString(
-            "es-CL"
-        );
+        valor || 0
+    ).toLocaleString(
+        "es-CL"
+    );
 }
 
 
@@ -1370,54 +2170,90 @@ function formatearEstado(
         PENDIENTE_PAGO:
             "Pendiente de pago",
 
+        PAGO_REVISION:
+            "Pago en revisión",
+
         PAGADO:
-            "Pagado",
+            "Pago aprobado",
 
         RECHAZADO:
-            "Rechazado",
+            "Pago rechazado",
 
         PREPARANDO:
-            "Preparando",
+            "En preparación",
 
         LISTO_RETIRO:
             "Listo para retiro",
 
         DESPACHADO:
-            "Despachado",
+            "Enviado",
 
         ENTREGADO:
-            "Entregado",
+            "Finalizado",
 
         CANCELADO:
             "Cancelado"
     };
 
 
-    return estados[estado]
-        ||
-        estado
-        ||
-        "-";
+    return (
+        estados[estado]
+        || estado
+        || "-"
+    );
 }
 
 
-function mostrarMensajeProducto(
+function mostrarMensaje(
+    elemento,
     texto,
     tipo
 ) {
 
-    mensajeProducto.textContent =
+    elemento.textContent =
         texto;
 
 
-    mensajeProducto.className =
-        "mensaje";
-
-
-    if (tipo) {
-
-        mensajeProducto.classList.add(
+    elemento.className =
+        "mensaje"
+        +
+        (
             tipo
+                ? ` ${tipo}`
+                : ""
         );
-    }
+}
+
+
+function escaparHtml(
+    valor
+) {
+
+    return String(
+        valor == null
+            ? ""
+            : valor
+    ).replace(
+        /[&<>'"]/g,
+        caracter => (
+
+            {
+                "&":
+                    "&amp;",
+
+                "<":
+                    "&lt;",
+
+                ">":
+                    "&gt;",
+
+                "'":
+                    "&#39;",
+
+                '"':
+                    "&quot;"
+
+            }[caracter]
+        )
+    );
 }

@@ -26,10 +26,7 @@ public class ProductoResource {
     @GET
     public Response listarProductos() {
         List<Producto> productos = entityManager
-                .createQuery(
-                        "SELECT p FROM Producto p ORDER BY p.id",
-                        Producto.class
-                )
+                .createQuery("SELECT p FROM Producto p ORDER BY p.id", Producto.class)
                 .getResultList();
 
         return Response.ok(productos).build();
@@ -38,13 +35,10 @@ public class ProductoResource {
     @GET
     @Path("/{id}")
     public Response obtenerProducto(@PathParam("id") int id) {
-
         Producto producto = entityManager.find(Producto.class, id);
 
         if (producto == null) {
-            return Response.status(Response.Status.NOT_FOUND)
-                    .entity("{\"mensaje\":\"Producto no encontrado\"}")
-                    .build();
+            return error(Response.Status.NOT_FOUND, "Producto no encontrado");
         }
 
         return Response.ok(producto).build();
@@ -53,73 +47,48 @@ public class ProductoResource {
     @POST
     @Transactional
     public Response crearProducto(Producto producto) {
-
-        if (producto.getNombre() == null ||
-                producto.getNombre().trim().isEmpty()) {
-
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity("{\"mensaje\":\"Debe indicar el nombre del producto\"}")
-                    .build();
+        String validacion = validarProducto(producto);
+        if (validacion != null) {
+            return error(Response.Status.BAD_REQUEST, validacion);
         }
 
-        if (producto.getPrecio() < 0) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity("{\"mensaje\":\"El precio no puede ser negativo\"}")
-                    .build();
-        }
-
-        if (producto.getStock() < 0) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity("{\"mensaje\":\"El stock no puede ser negativo\"}")
-                    .build();
-        }
-
+        producto.setNombre(producto.getNombre().trim());
+        producto.setDescripcion(limpiar(producto.getDescripcion()));
+        producto.setCategoria(limpiar(producto.getCategoria()));
+        producto.setImagenUrl(limpiar(producto.getImagenUrl()));
         producto.setActivo(true);
 
         entityManager.persist(producto);
         entityManager.flush();
 
-        return Response.status(Response.Status.CREATED)
-                .entity(producto)
-                .build();
+        return Response.status(Response.Status.CREATED).entity(producto).build();
     }
 
     @PUT
     @Path("/{id}")
     @Transactional
-    public Response actualizarProducto(
-            @PathParam("id") int id,
-            Producto datos) {
-
+    public Response actualizarProducto(@PathParam("id") int id, Producto datos) {
         Producto producto = entityManager.find(Producto.class, id);
 
         if (producto == null) {
-            return Response.status(Response.Status.NOT_FOUND)
-                    .entity("{\"mensaje\":\"Producto no encontrado\"}")
-                    .build();
+            return error(Response.Status.NOT_FOUND, "Producto no encontrado");
         }
 
-        if (datos.getNombre() != null &&
-                !datos.getNombre().trim().isEmpty()) {
-
-            producto.setNombre(datos.getNombre());
+        String validacion = validarProducto(datos);
+        if (validacion != null) {
+            return error(Response.Status.BAD_REQUEST, validacion);
         }
 
-        if (datos.getDescripcion() != null) {
-            producto.setDescripcion(datos.getDescripcion());
-        }
-
-        if (datos.getPrecio() >= 0) {
-            producto.setPrecio(datos.getPrecio());
-        }
-
-        if (datos.getStock() >= 0) {
-            producto.setStock(datos.getStock());
-        }
-
+        producto.setNombre(datos.getNombre().trim());
+        producto.setDescripcion(limpiar(datos.getDescripcion()));
+        producto.setCategoria(limpiar(datos.getCategoria()));
+        producto.setImagenUrl(limpiar(datos.getImagenUrl()));
+        producto.setPrecio(datos.getPrecio());
+        producto.setStock(datos.getStock());
         producto.setActivo(datos.isActivo());
 
         entityManager.merge(producto);
+        entityManager.flush();
 
         return Response.ok(producto).build();
     }
@@ -127,22 +96,40 @@ public class ProductoResource {
     @PUT
     @Path("/{id}/estado")
     @Transactional
-    public Response cambiarEstado(
-            @PathParam("id") int id,
-            Producto datos) {
-
+    public Response cambiarEstado(@PathParam("id") int id, Producto datos) {
         Producto producto = entityManager.find(Producto.class, id);
 
         if (producto == null) {
-            return Response.status(Response.Status.NOT_FOUND)
-                    .entity("{\"mensaje\":\"Producto no encontrado\"}")
-                    .build();
+            return error(Response.Status.NOT_FOUND, "Producto no encontrado");
         }
 
         producto.setActivo(datos.isActivo());
-
         entityManager.merge(producto);
+        entityManager.flush();
 
         return Response.ok(producto).build();
+    }
+
+    private String validarProducto(Producto producto) {
+        if (producto == null || producto.getNombre() == null || producto.getNombre().trim().isEmpty()) {
+            return "Debe indicar el nombre del producto";
+        }
+        if (producto.getPrecio() < 0) {
+            return "El precio no puede ser negativo";
+        }
+        if (producto.getStock() < 0) {
+            return "El stock no puede ser negativo";
+        }
+        return null;
+    }
+
+    private String limpiar(String valor) {
+        return valor == null ? "" : valor.trim();
+    }
+
+    private Response error(Response.Status estado, String mensaje) {
+        return Response.status(estado)
+                .entity("{\"mensaje\":\"" + mensaje.replace("\"", "'") + "\"}")
+                .build();
     }
 }

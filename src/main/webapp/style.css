@@ -1775,3 +1775,246 @@ footer strong {
     }
 
 }
+/* =========================================================
+   EXTENSIONES MVP FINAL - CARRITO / PEDIDOS / ADMIN
+   ========================================================= */
+
+.boton-secundario-enlace,
+.boton-secundario,
+.boton-tabla,
+.boton-peligro-pequeno {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #d8d8d8;
+    border-radius: 8px;
+    padding: 9px 13px;
+    background: #ffffff;
+    color: #222222;
+    cursor: pointer;
+    text-decoration: none;
+    font: inherit;
+}
+
+.boton-secundario-enlace:hover,
+.boton-secundario:hover,
+.boton-tabla:hover {
+    background: #f4f4f4;
+}
+
+.acciones-cabecera,
+.acciones-tabla,
+.agregar-carrito-linea {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.productos-cliente {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(235px, 1fr));
+    gap: 18px;
+}
+
+.tarjeta-producto-completa {
+    overflow: hidden;
+    padding: 0 !important;
+}
+
+.producto-imagen {
+    display: block;
+    width: 100%;
+    height: 185px;
+    object-fit: cover;
+    background: #f0f0f0;
+}
+
+.producto-sin-imagen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #777;
+    font-size: 14px;
+}
+
+.producto-contenido {
+    padding: 18px;
+}
+
+.producto-categoria {
+    display: inline-block;
+    margin-bottom: 7px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: #f2f2f2;
+    color: #555;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.agregar-carrito-linea {
+    margin-top: 14px;
+}
+
+.cantidad-tarjeta,
+.cantidad-carrito {
+    width: 75px;
+    padding: 8px;
+    border: 1px solid #d5d5d5;
+    border-radius: 7px;
+}
+
+.tabla-responsive {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.tabla-carrito,
+.tabla-pedidos {
+    min-width: 760px;
+}
+
+.carrito-total {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 16px;
+    margin-top: 16px;
+    font-size: 18px;
+}
+
+.carrito-total strong {
+    font-size: 24px;
+}
+
+.boton-peligro-pequeno {
+    border-color: #e5b7b7;
+    color: #9d1111;
+}
+
+.campo-ancho {
+    grid-column: 1 / -1;
+}
+
+.campo textarea {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #d7d7d7;
+    border-radius: 8px;
+    padding: 11px 12px;
+    resize: vertical;
+    font: inherit;
+}
+
+.resultado-cliente-ampliado {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.aviso-pago {
+    margin-top: 18px;
+    padding: 16px;
+    border-left: 4px solid var(--azul-mapu);
+    background: #f5f8fb;
+    border-radius: 7px;
+}
+
+.aviso-pago p {
+    margin-bottom: 0;
+}
+
+.form-comprobante {
+    margin-top: 18px;
+}
+
+.lista-pedidos-cliente {
+    display: grid;
+    gap: 14px;
+    margin-top: 18px;
+}
+
+.pedido-cliente-card {
+    padding: 18px;
+    border: 1px solid #e1e1e1;
+    border-radius: 10px;
+    background: #fff;
+}
+
+.pedido-card-encabezado {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.estado-etiqueta {
+    padding: 5px 9px;
+    border-radius: 999px;
+    background: #eef2f4;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.resumen-ampliado {
+    grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+}
+
+.texto-pendiente {
+    color: #8a6d00;
+    font-weight: 700;
+}
+
+.selector-estado {
+    min-width: 150px;
+    padding: 7px;
+    border: 1px solid #d8d8d8;
+    border-radius: 7px;
+}
+
+.detalle-admin-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 22px;
+}
+
+.detalle-admin-grid > div {
+    padding: 14px;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    background: #fafafa;
+}
+
+.detalle-admin-grid span {
+    display: block;
+    margin-bottom: 6px;
+    color: #666;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+.detalle-admin-grid ul {
+    margin: 6px 0 0 18px;
+    padding: 0;
+}
+
+.detalle-admin-ancho {
+    grid-column: 1 / -1;
+}
+
+@media (max-width: 760px) {
+    .acciones-cabecera {
+        justify-content: flex-end;
+    }
+
+    .resultado-cliente-ampliado,
+    .detalle-admin-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .detalle-admin-ancho {
+        grid-column: auto;
+    }
+}
