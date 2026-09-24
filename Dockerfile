@@ -23,8 +23,14 @@ FROM eclipse-temurin:21-jdk
 
 USER root
 
+# curl/unzip para GlassFish
+# ca-certificates para certificados públicos (incluye ISRG)
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl unzip \
+    && apt-get install -y --no-install-recommends \
+        curl \
+        unzip \
+        ca-certificates \
+    && update-ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt
@@ -40,6 +46,43 @@ ENV PATH="/opt/glassfish8/bin:${PATH}"
 
 # Mejora el arranque de GlassFish 8.0.4
 ENV AS_HOSTNAME=localhost
+
+
+# =========================================================
+# CERTIFICADOS HTTPS PARA FLOWABLE
+# =========================================================
+#
+# GlassFish utiliza su propio truststore:
+# /opt/glassfish8/glassfish/domains/domain1/config/cacerts.p12
+#
+# Se agregan las raíces ISRG utilizadas por Let's Encrypt,
+# necesarias para que Java pueda consumir Flowable vía HTTPS.
+#
+# Esto evita el error:
+# PKIX path building failed
+# =========================================================
+
+RUN keytool -importcert \
+        -noprompt \
+        -trustcacerts \
+        -alias isrg-root-x1 \
+        -file /etc/ssl/certs/ISRG_Root_X1.pem \
+        -keystore /opt/glassfish8/glassfish/domains/domain1/config/cacerts.p12 \
+        -storetype PKCS12 \
+        -storepass changeit \
+    && keytool -importcert \
+        -noprompt \
+        -trustcacerts \
+        -alias isrg-root-x2 \
+        -file /etc/ssl/certs/ISRG_Root_X2.pem \
+        -keystore /opt/glassfish8/glassfish/domains/domain1/config/cacerts.p12 \
+        -storetype PKCS12 \
+        -storepass changeit
+
+
+# =========================================================
+# MAPUESCUELA
+# =========================================================
 
 RUN mkdir -p /opt/mapuescuela
 

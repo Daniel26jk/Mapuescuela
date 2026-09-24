@@ -54,6 +54,9 @@ services:
       DB_USER: ${MYSQL_USER:-mapuescuela}
       DB_PASSWORD: ${MYSQL_PASSWORD:-mapuescuela123}
 
+      FLOWABLE_TOKEN: ${FLOWABLE_TOKEN}
+      FLOWABLE_PROCESS_KEY: ${FLOWABLE_PROCESS_KEY}
+
     ports:
       - "${APP_PORT:-8081}:8080"
       - "${GLASSFISH_ADMIN_PORT:-4849}:4848"

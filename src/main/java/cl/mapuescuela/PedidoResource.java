@@ -30,133 +30,174 @@ public class PedidoResource {
        CREAR PEDIDO
        ========================================================= */
 
-    @POST
-    @Transactional
-    public Response crearPedido(Pedido pedido) {
+@POST
+@Transactional
+public Response crearPedido(Pedido pedido) {
 
-        if (pedido.getCliente() == null ||
-                pedido.getCliente().trim().isEmpty()) {
-
-            return Response
-                    .status(Response.Status.BAD_REQUEST)
-                    .entity(
-                            "{\"mensaje\":\"Debe indicar el cliente\"}"
-                    )
-                    .build();
-        }
-
-
-        if (pedido.getProductoId() <= 0) {
-
-            return Response
-                    .status(Response.Status.BAD_REQUEST)
-                    .entity(
-                            "{\"mensaje\":\"Debe indicar un producto válido\"}"
-                    )
-                    .build();
-        }
-
-
-        if (pedido.getCantidad() <= 0) {
-
-            return Response
-                    .status(Response.Status.BAD_REQUEST)
-                    .entity(
-                            "{\"mensaje\":\"La cantidad debe ser mayor que cero\"}"
-                    )
-                    .build();
-        }
-
-
-        Producto producto =
-                entityManager.find(
-                        Producto.class,
-                        pedido.getProductoId()
-                );
-
-
-        if (producto == null) {
-
-            return Response
-                    .status(Response.Status.NOT_FOUND)
-                    .entity(
-                            "{\"mensaje\":\"Producto no encontrado\"}"
-                    )
-                    .build();
-        }
-
-
-        if (!producto.isActivo()) {
-
-            return Response
-                    .status(Response.Status.BAD_REQUEST)
-                    .entity(
-                            "{\"mensaje\":\"El producto no está disponible\"}"
-                    )
-                    .build();
-        }
-
-
-        if (producto.getStock() < pedido.getCantidad()) {
-
-            return Response
-                    .status(Response.Status.BAD_REQUEST)
-                    .entity(
-                            "{\"mensaje\":\"Stock insuficiente\"}"
-                    )
-                    .build();
-        }
-
-
-        pedido.setCliente(
-                pedido.getCliente().trim()
-        );
-
-        pedido.setProducto(
-                producto.getNombre()
-        );
-
-        pedido.setEstado(
-                "PENDIENTE_PAGO"
-        );
-
-        pedido.setInventarioActualizado(
-                false
-        );
-
-
-        entityManager.persist(
-                pedido
-        );
-
-        entityManager.flush();
-
-
-        String codigoPedido =
-                generarCodigoPedido(
-                        pedido.getCliente(),
-                        pedido.getId()
-                );
-
-
-        pedido.setCodigoPedido(
-                codigoPedido
-        );
-
-
-        entityManager.merge(
-                pedido
-        );
-
-        entityManager.flush();
-
+    if (pedido.getCliente() == null ||
+            pedido.getCliente().trim().isEmpty()) {
 
         return Response
-                .status(Response.Status.CREATED)
-                .entity(pedido)
+                .status(Response.Status.BAD_REQUEST)
+                .entity(
+                        "{\"mensaje\":\"Debe indicar el cliente\"}"
+                )
                 .build();
     }
 
+    if (pedido.getProductoId() <= 0) {
+
+        return Response
+                .status(Response.Status.BAD_REQUEST)
+                .entity(
+                        "{\"mensaje\":\"Debe indicar un producto valido\"}"
+                )
+                .build();
+    }
+
+    if (pedido.getCantidad() <= 0) {
+
+        return Response
+                .status(Response.Status.BAD_REQUEST)
+                .entity(
+                        "{\"mensaje\":\"La cantidad debe ser mayor que cero\"}"
+                )
+                .build();
+    }
+
+    if (pedido.getModalidadEntrega() == null ||
+            pedido.getModalidadEntrega().trim().isEmpty()) {
+
+        return Response
+                .status(Response.Status.BAD_REQUEST)
+                .entity(
+                        "{\"mensaje\":\"Debe indicar modalidad de entrega\"}"
+                )
+                .build();
+    }
+
+    String modalidad =
+            pedido
+                    .getModalidadEntrega()
+                    .trim()
+                    .toUpperCase();
+
+    if (!"RETIRO".equals(modalidad) &&
+            !"DESPACHO".equals(modalidad)) {
+
+        return Response
+                .status(Response.Status.BAD_REQUEST)
+                .entity(
+                        "{\"mensaje\":\"Modalidad debe ser RETIRO o DESPACHO\"}"
+                )
+                .build();
+    }
+
+    Producto producto =
+            entityManager.find(
+                    Producto.class,
+                    pedido.getProductoId()
+            );
+
+    if (producto == null) {
+
+        return Response
+                .status(Response.Status.NOT_FOUND)
+                .entity(
+                        "{\"mensaje\":\"Producto no encontrado\"}"
+                )
+                .build();
+    }
+
+    if (!producto.isActivo()) {
+
+        return Response
+                .status(Response.Status.BAD_REQUEST)
+                .entity(
+                        "{\"mensaje\":\"El producto no esta disponible\"}"
+                )
+                .build();
+    }
+
+    if (producto.getStock() <
+            pedido.getCantidad()) {
+
+        return Response
+                .status(Response.Status.BAD_REQUEST)
+                .entity(
+                        "{\"mensaje\":\"Stock insuficiente\"}"
+                )
+                .build();
+    }
+
+    pedido.setCliente(
+            pedido.getCliente().trim()
+    );
+
+    pedido.setProducto(
+            producto.getNombre()
+    );
+
+    pedido.setModalidadEntrega(
+            modalidad
+    );
+
+    pedido.setEstado(
+            "PENDIENTE_PAGO"
+    );
+
+    pedido.setInventarioActualizado(
+            false
+    );
+
+    entityManager.persist(
+            pedido
+    );
+
+    entityManager.flush();
+
+    String codigoPedido =
+            generarCodigoPedido(
+                    pedido.getCliente(),
+                    pedido.getId()
+            );
+
+    pedido.setCodigoPedido(
+            codigoPedido
+    );
+
+    entityManager.merge(
+            pedido
+    );
+
+    entityManager.flush();
+
+    try {
+
+        FlowableProcessStarter
+                .iniciarProceso(pedido);
+
+    } catch (Exception e) {
+
+        e.printStackTrace();
+
+        throw new jakarta.ws.rs.WebApplicationException(
+                Response
+                        .status(
+                                Response.Status.BAD_GATEWAY
+                        )
+                        .entity(
+                                "{\"mensaje\":\"El pedido no pudo iniciar el proceso en Flowable\"}"
+                        )
+                        .build()
+        );
+    }
+
+    return Response
+            .status(Response.Status.CREATED)
+            .entity(pedido)
+            .build();
+}
 
     /* =========================================================
        LISTAR TODOS LOS PEDIDOS
