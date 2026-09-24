@@ -15,7 +15,11 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import java.text.Normalizer;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Path("/pedidos")
 @Produces(MediaType.APPLICATION_JSON)
@@ -30,177 +34,345 @@ public class PedidoResource {
        CREAR PEDIDO
        ========================================================= */
 
-@POST
-@Transactional
-public Response crearPedido(Pedido pedido) {
+    @POST
+    @Transactional
+    public Response crearPedido(Pedido pedido) {
 
-    if (pedido.getCliente() == null ||
-            pedido.getCliente().trim().isEmpty()) {
+        if (pedido == null) {
+            return error(
+                    Response.Status.BAD_REQUEST,
+                    "Debe enviar los datos del pedido"
+            );
+        }
 
-        return Response
-                .status(Response.Status.BAD_REQUEST)
-                .entity(
-                        "{\"mensaje\":\"Debe indicar el cliente\"}"
-                )
-                .build();
-    }
+        if (vacio(pedido.getCliente())) {
+            return error(
+                    Response.Status.BAD_REQUEST,
+                    "Debe indicar el nombre del cliente"
+            );
+        }
 
-    if (pedido.getProductoId() <= 0) {
+        String modalidad =
+                normalizarModalidad(
+                        pedido.getModalidadEntrega()
+                );
 
-        return Response
-                .status(Response.Status.BAD_REQUEST)
-                .entity(
-                        "{\"mensaje\":\"Debe indicar un producto valido\"}"
-                )
-                .build();
-    }
+        if (modalidad == null) {
+            return error(
+                    Response.Status.BAD_REQUEST,
+                    "Debe indicar una modalidad de entrega válida"
+            );
+        }
 
-    if (pedido.getCantidad() <= 0) {
 
-        return Response
-                .status(Response.Status.BAD_REQUEST)
-                .entity(
-                        "{\"mensaje\":\"La cantidad debe ser mayor que cero\"}"
-                )
-                .build();
-    }
+        /*
+         * Permite trabajar tanto con el carrito nuevo
+         * como con el formato antiguo productoId + cantidad.
+         */
+        List<PedidoItem> itemsEntrada =
+                pedido.getItems();
 
-    if (pedido.getModalidadEntrega() == null ||
-            pedido.getModalidadEntrega().trim().isEmpty()) {
+        if (itemsEntrada == null ||
+                itemsEntrada.isEmpty()) {
 
-        return Response
-                .status(Response.Status.BAD_REQUEST)
-                .entity(
-                        "{\"mensaje\":\"Debe indicar modalidad de entrega\"}"
-                )
-                .build();
-    }
+            if (pedido.getProductoId() <= 0 ||
+                    pedido.getCantidad() <= 0) {
 
-    String modalidad =
-            pedido
-                    .getModalidadEntrega()
-                    .trim()
-                    .toUpperCase();
+                return error(
+                        Response.Status.BAD_REQUEST,
+                        "Debe agregar al menos un producto al pedido"
+                );
+            }
 
-    if (!"RETIRO".equals(modalidad) &&
-            !"DESPACHO".equals(modalidad)) {
+            PedidoItem itemLegacy =
+                    new PedidoItem();
 
-        return Response
-                .status(Response.Status.BAD_REQUEST)
-                .entity(
-                        "{\"mensaje\":\"Modalidad debe ser RETIRO o DESPACHO\"}"
-                )
-                .build();
-    }
-
-    Producto producto =
-            entityManager.find(
-                    Producto.class,
+            itemLegacy.setProductoId(
                     pedido.getProductoId()
             );
 
-    if (producto == null) {
+            itemLegacy.setCantidad(
+                    pedido.getCantidad()
+            );
 
-        return Response
-                .status(Response.Status.NOT_FOUND)
-                .entity(
-                        "{\"mensaje\":\"Producto no encontrado\"}"
+            itemsEntrada =
+                    new ArrayList<>();
+
+            itemsEntrada.add(
+                    itemLegacy
+            );
+        }
+
+
+        List<PedidoItem> itemsValidados =
+                new ArrayList<>();
+
+        int total = 0;
+        int totalUnidades = 0;
+
+
+        for (PedidoItem itemEntrada : itemsEntrada) {
+
+            if (itemEntrada == null ||
+                    itemEntrada.getProductoId() <= 0 ||
+                    itemEntrada.getCantidad() <= 0) {
+
+                return error(
+                        Response.Status.BAD_REQUEST,
+                        "Uno de los productos del carrito no es válido"
+                );
+            }
+
+
+            Producto producto =
+                    entityManager.find(
+                            Producto.class,
+                            itemEntrada.getProductoId()
+                    );
+
+
+            if (producto == null) {
+
+                return error(
+                        Response.Status.NOT_FOUND,
+                        "Producto no encontrado: "
+                                + itemEntrada.getProductoId()
+                );
+            }
+
+
+            if (!producto.isActivo()) {
+
+                return error(
+                        Response.Status.BAD_REQUEST,
+                        "El producto "
+                                + producto.getNombre()
+                                + " no está disponible"
+                );
+            }
+
+
+            if (producto.getStock()
+                    < itemEntrada.getCantidad()) {
+
+                return error(
+                        Response.Status.BAD_REQUEST,
+                        "Stock insuficiente para "
+                                + producto.getNombre()
+                );
+            }
+
+
+            PedidoItem item =
+                    new PedidoItem();
+
+            item.setProductoId(
+                    producto.getId()
+            );
+
+            item.setProducto(
+                    producto.getNombre()
+            );
+
+            item.setCantidad(
+                    itemEntrada.getCantidad()
+            );
+
+            item.setPrecioUnitario(
+                    producto.getPrecio()
+            );
+
+            item.setSubtotal(
+                    producto.getPrecio()
+                            * itemEntrada.getCantidad()
+            );
+
+
+            itemsValidados.add(
+                    item
+            );
+
+            total += item.getSubtotal();
+            totalUnidades += item.getCantidad();
+        }
+
+
+        PedidoItem primero =
+                itemsValidados.get(0);
+
+
+        pedido.setCliente(
+                pedido.getCliente().trim()
+        );
+
+        pedido.setEmail(
+                limpiar(
+                        pedido.getEmail()
                 )
-                .build();
-    }
+        );
 
-    if (!producto.isActivo()) {
-
-        return Response
-                .status(Response.Status.BAD_REQUEST)
-                .entity(
-                        "{\"mensaje\":\"El producto no esta disponible\"}"
+        pedido.setTelefono(
+                limpiar(
+                        pedido.getTelefono()
                 )
-                .build();
-    }
+        );
 
-    if (producto.getStock() <
-            pedido.getCantidad()) {
+        pedido.setModalidadEntrega(
+                modalidad
+        );
 
-        return Response
-                .status(Response.Status.BAD_REQUEST)
-                .entity(
-                        "{\"mensaje\":\"Stock insuficiente\"}"
+        pedido.setDireccionEntrega(
+                limpiar(
+                        pedido.getDireccionEntrega()
                 )
-                .build();
-    }
+        );
 
-    pedido.setCliente(
-            pedido.getCliente().trim()
-    );
+        pedido.setComunaEntrega(
+                limpiar(
+                        pedido.getComunaEntrega()
+                )
+        );
 
-    pedido.setProducto(
-            producto.getNombre()
-    );
 
-    pedido.setModalidadEntrega(
-            modalidad
-    );
+        /*
+         * Se mantienen estos campos por compatibilidad
+         * con Flowable y con pedidos antiguos.
+         */
+        pedido.setProductoId(
+                primero.getProductoId()
+        );
 
-    pedido.setEstado(
-            "PENDIENTE_PAGO"
-    );
+        pedido.setCantidad(
+                totalUnidades
+        );
 
-    pedido.setInventarioActualizado(
-            false
-    );
+        pedido.setProducto(
+                itemsValidados.size() == 1
+                        ? primero.getProducto()
+                        : itemsValidados.size()
+                        + " productos"
+        );
 
-    entityManager.persist(
-            pedido
-    );
 
-    entityManager.flush();
+        pedido.setTotal(
+                total
+        );
 
-    String codigoPedido =
-            generarCodigoPedido(
-                    pedido.getCliente(),
+        pedido.setEstado(
+                "PENDIENTE_PAGO"
+        );
+
+        pedido.setInventarioDescontado(
+                false
+        );
+
+        pedido.setInventarioActualizado(
+                false
+        );
+
+        pedido.setComprobanteAdjunto(
+                false
+        );
+
+        pedido.setEmpresaTransporte(
+                ""
+        );
+
+        pedido.setNumeroSeguimiento(
+                ""
+        );
+
+        pedido.setFechaEnvio(
+                ""
+        );
+
+
+        /*
+         * Primero guardamos el pedido para obtener
+         * el ID generado por MySQL.
+         */
+        entityManager.persist(
+                pedido
+        );
+
+        entityManager.flush();
+
+
+        pedido.setCodigoPedido(
+                generarCodigoPedido(
+                        pedido.getCliente(),
+                        pedido.getId()
+                )
+        );
+
+        entityManager.merge(
+                pedido
+        );
+
+
+        /*
+         * Guardamos los productos asociados al pedido.
+         */
+        for (PedidoItem item : itemsValidados) {
+
+            item.setPedidoId(
                     pedido.getId()
             );
 
-    pedido.setCodigoPedido(
-            codigoPedido
-    );
+            entityManager.persist(
+                    item
+            );
+        }
 
-    entityManager.merge(
-            pedido
-    );
 
-    entityManager.flush();
+        entityManager.flush();
 
-    try {
-
-        FlowableProcessStarter
-                .iniciarProceso(pedido);
-
-    } catch (Exception e) {
-
-        e.printStackTrace();
-
-        throw new jakarta.ws.rs.WebApplicationException(
-                Response
-                        .status(
-                                Response.Status.BAD_GATEWAY
-                        )
-                        .entity(
-                                "{\"mensaje\":\"El pedido no pudo iniciar el proceso en Flowable\"}"
-                        )
-                        .build()
+        pedido.setItems(
+                itemsValidados
         );
+
+
+        /*
+         * Una vez creado el pedido y obtenido su ID real,
+         * iniciamos automáticamente el proceso G4.
+         */
+        try {
+
+            FlowableProcessStarter
+                    .iniciarProceso(
+                            pedido
+                    );
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+
+            throw new jakarta.ws.rs.WebApplicationException(
+                    Response
+                            .status(
+                                    Response.Status.BAD_GATEWAY
+                            )
+                            .entity(
+                                    "{\"mensaje\":\"El pedido no pudo iniciar el proceso en Flowable\"}"
+                            )
+                            .build()
+            );
+        }
+
+
+        return Response
+                .status(
+                        Response.Status.CREATED
+                )
+                .entity(
+                        pedido
+                )
+                .build();
     }
 
-    return Response
-            .status(Response.Status.CREATED)
-            .entity(pedido)
-            .build();
-}
 
     /* =========================================================
-       LISTAR TODOS LOS PEDIDOS
+       LISTAR PEDIDOS
        ========================================================= */
 
     @GET
@@ -216,14 +388,21 @@ public Response crearPedido(Pedido pedido) {
                         .getResultList();
 
 
+        completarItems(
+                pedidos
+        );
+
+
         return Response
-                .ok(pedidos)
+                .ok(
+                        pedidos
+                )
                 .build();
     }
 
 
     /* =========================================================
-       CONSULTAR POR ID
+       CONSULTAR PEDIDO POR ID
        ========================================================= */
 
     @GET
@@ -240,23 +419,30 @@ public Response crearPedido(Pedido pedido) {
 
         if (pedido == null) {
 
-            return Response
-                    .status(Response.Status.NOT_FOUND)
-                    .entity(
-                            "{\"mensaje\":\"Pedido no encontrado\"}"
-                    )
-                    .build();
+            return error(
+                    Response.Status.NOT_FOUND,
+                    "Pedido no encontrado"
+            );
         }
 
 
+        pedido.setItems(
+                obtenerItems(
+                        id
+                )
+        );
+
+
         return Response
-                .ok(pedido)
+                .ok(
+                        pedido
+                )
                 .build();
     }
 
 
     /* =========================================================
-       CONSULTAR POR NOMBRE O CÓDIGO
+       CONSULTAR PEDIDO
        ========================================================= */
 
     @GET
@@ -264,80 +450,93 @@ public Response crearPedido(Pedido pedido) {
     public Response consultarPedido(
             @QueryParam("busqueda") String busqueda) {
 
-        if (busqueda == null ||
-                busqueda.trim().isEmpty()) {
+        if (vacio(busqueda)) {
 
-            return Response
-                    .status(Response.Status.BAD_REQUEST)
-                    .entity(
-                            "{\"mensaje\":\"Debe indicar un nombre o código de pedido\"}"
-                    )
-                    .build();
+            return error(
+                    Response.Status.BAD_REQUEST,
+                    "Debe indicar un nombre, correo, teléfono o código de pedido"
+            );
         }
 
 
         String texto =
-                busqueda
-                        .trim()
-                        .toUpperCase();
+                busqueda.trim();
+
+        String mayusculas =
+                texto.toUpperCase();
 
 
+        /*
+         * Primero buscamos coincidencia exacta
+         * por código de pedido.
+         */
         List<Pedido> porCodigo =
                 entityManager
                         .createQuery(
                                 "SELECT p FROM Pedido p "
-                                        + "WHERE UPPER(p.codigoPedido) = :codigo",
+                                        + "WHERE UPPER(p.codigoPedido) = :codigo "
+                                        + "ORDER BY p.id DESC",
                                 Pedido.class
                         )
                         .setParameter(
                                 "codigo",
-                                texto
+                                mayusculas
                         )
                         .getResultList();
 
 
         if (!porCodigo.isEmpty()) {
 
-            return Response
-                    .ok(porCodigo)
-                    .build();
-        }
-
-
-        List<Pedido> porCliente =
-                entityManager
-                        .createQuery(
-                                "SELECT p FROM Pedido p "
-                                        + "WHERE UPPER(p.cliente) LIKE :cliente "
-                                        + "ORDER BY p.id DESC",
-                                Pedido.class
-                        )
-                        .setParameter(
-                                "cliente",
-                                "%" + texto + "%"
-                        )
-                        .getResultList();
-
-
-        if (porCliente.isEmpty()) {
+            completarItems(
+                    porCodigo
+            );
 
             return Response
-                    .status(Response.Status.NOT_FOUND)
-                    .entity(
-                            "{\"mensaje\":\"No se encontraron pedidos con esos datos\"}"
+                    .ok(
+                            porCodigo
                     )
                     .build();
         }
 
 
+        /*
+         * Si no coincide con código buscamos por:
+         * cliente, email o teléfono.
+         */
+        List<Pedido> pedidos =
+                entityManager
+                        .createQuery(
+                                "SELECT p FROM Pedido p "
+                                        + "WHERE LOWER(p.cliente) LIKE :texto "
+                                        + "OR LOWER(p.email) LIKE :texto "
+                                        + "OR LOWER(p.telefono) LIKE :texto "
+                                        + "ORDER BY p.id DESC",
+                                Pedido.class
+                        )
+                        .setParameter(
+                                "texto",
+                                "%"
+                                        + texto.toLowerCase()
+                                        + "%"
+                        )
+                        .getResultList();
+
+
+        completarItems(
+                pedidos
+        );
+
+
         return Response
-                .ok(porCliente)
+                .ok(
+                        pedidos
+                )
                 .build();
     }
 
 
     /* =========================================================
-       ACTUALIZAR ESTADO DEL PEDIDO
+       ACTUALIZAR ESTADO
        ========================================================= */
 
     @PUT
@@ -356,46 +555,61 @@ public Response crearPedido(Pedido pedido) {
 
         if (pedido == null) {
 
-            return Response
-                    .status(Response.Status.NOT_FOUND)
-                    .entity(
-                            "{\"mensaje\":\"Pedido no encontrado\"}"
-                    )
-                    .build();
+            return error(
+                    Response.Status.NOT_FOUND,
+                    "Pedido no encontrado"
+            );
         }
 
 
-        if (datos.getEstado() == null ||
-                datos.getEstado().trim().isEmpty()) {
+        if (datos == null ||
+                vacio(datos.getEstado())) {
 
-            return Response
-                    .status(Response.Status.BAD_REQUEST)
-                    .entity(
-                            "{\"mensaje\":\"Debe indicar el estado\"}"
-                    )
-                    .build();
+            return error(
+                    Response.Status.BAD_REQUEST,
+                    "Debe indicar el estado"
+            );
         }
 
 
-        String nuevoEstado =
+        String estado =
                 datos
                         .getEstado()
                         .trim()
                         .toUpperCase();
 
 
-        pedido.setEstado(
-                nuevoEstado
-        );
+        if (!estadoValido(estado)) {
 
+            return error(
+                    Response.Status.BAD_REQUEST,
+                    "Estado de pedido no válido"
+            );
+        }
+
+
+        pedido.setEstado(
+                estado
+        );
 
         entityManager.merge(
                 pedido
         );
 
+        entityManager.flush();
+
+
+        pedido.setItems(
+                obtenerItems(
+                        id
+                )
+        );
+
 
         return Response
-                .ok(pedido)
+                .ok(
+                        pedido
+                )
                 .build();
     }
 
@@ -419,10 +633,32 @@ public Response crearPedido(Pedido pedido) {
 
         if (pedido == null) {
 
+            return error(
+                    Response.Status.NOT_FOUND,
+                    "Pedido no encontrado"
+            );
+        }
+
+
+        /*
+         * Evita descontar inventario dos veces.
+         *
+         * inventarioActualizado corresponde a la
+         * implementación anterior y
+         * inventarioDescontado a la nueva.
+         */
+        if (pedido.isInventarioDescontado() ||
+                pedido.isInventarioActualizado()) {
+
+            pedido.setItems(
+                    obtenerItems(
+                            id
+                    )
+            );
+
             return Response
-                    .status(Response.Status.NOT_FOUND)
-                    .entity(
-                            "{\"mensaje\":\"Pedido no encontrado\"}"
+                    .ok(
+                            pedido
                     )
                     .build();
         }
@@ -431,74 +667,140 @@ public Response crearPedido(Pedido pedido) {
         if (!"PAGADO".equalsIgnoreCase(
                 pedido.getEstado())) {
 
-            return Response
-                    .status(Response.Status.BAD_REQUEST)
-                    .entity(
-                            "{\"mensaje\":\"El pedido debe estar PAGADO antes de actualizar inventario\"}"
-                    )
-                    .build();
+            return error(
+                    Response.Status.BAD_REQUEST,
+                    "El inventario solo puede descontarse cuando el pedido está PAGADO"
+            );
         }
 
 
-        if (pedido.isInventarioActualizado()) {
-
-            return Response
-                    .ok(pedido)
-                    .build();
-        }
-
-
-        if (pedido.getProductoId() <= 0 ||
-                pedido.getCantidad() <= 0) {
-
-            return Response
-                    .status(Response.Status.BAD_REQUEST)
-                    .entity(
-                            "{\"mensaje\":\"El pedido no contiene información válida de inventario\"}"
-                    )
-                    .build();
-        }
-
-
-        Producto producto =
-                entityManager.find(
-                        Producto.class,
-                        pedido.getProductoId()
+        List<PedidoItem> items =
+                obtenerItems(
+                        id
                 );
 
 
-        if (producto == null) {
+        /*
+         * Compatibilidad con pedidos anteriores
+         * que no tengan registros PedidoItem.
+         */
+        if (items.isEmpty()) {
 
-            return Response
-                    .status(Response.Status.NOT_FOUND)
-                    .entity(
-                            "{\"mensaje\":\"Producto asociado no encontrado\"}"
-                    )
-                    .build();
+            PedidoItem legacy =
+                    new PedidoItem();
+
+            legacy.setProductoId(
+                    pedido.getProductoId()
+            );
+
+            legacy.setCantidad(
+                    pedido.getCantidad()
+            );
+
+            legacy.setProducto(
+                    pedido.getProducto()
+            );
+
+            items.add(
+                    legacy
+            );
         }
 
 
-        if (producto.getStock()
-                < pedido.getCantidad()) {
+        /*
+         * Agrupamos cantidades por producto para
+         * evitar descontar incorrectamente si un
+         * mismo producto aparece varias veces.
+         */
+        Map<Integer, Integer> cantidades =
+                new HashMap<>();
 
-            return Response
-                    .status(Response.Status.BAD_REQUEST)
-                    .entity(
-                            "{\"mensaje\":\"Stock insuficiente\"}"
-                    )
-                    .build();
+
+        for (PedidoItem item : items) {
+
+            Integer actual =
+                    cantidades.get(
+                            item.getProductoId()
+                    );
+
+            cantidades.put(
+                    item.getProductoId(),
+                    (actual == null ? 0 : actual)
+                            + item.getCantidad()
+            );
         }
 
 
-        int nuevoStock =
-                producto.getStock()
-                        - pedido.getCantidad();
+        Map<Integer, Producto> productos =
+                new HashMap<>();
 
 
-        producto.setStock(
-                nuevoStock
+        /*
+         * Primero validamos todo el stock antes
+         * de realizar cualquier descuento.
+         */
+        for (Map.Entry<Integer, Integer> entry
+                : cantidades.entrySet()) {
+
+            Producto producto =
+                    entityManager.find(
+                            Producto.class,
+                            entry.getKey()
+                    );
+
+
+            if (producto == null) {
+
+                return error(
+                        Response.Status.NOT_FOUND,
+                        "Uno de los productos del pedido ya no existe"
+                );
+            }
+
+
+            if (producto.getStock()
+                    < entry.getValue()) {
+
+                return error(
+                        Response.Status.BAD_REQUEST,
+                        "Stock insuficiente para "
+                                + producto.getNombre()
+                );
+            }
+
+
+            productos.put(
+                    entry.getKey(),
+                    producto
+            );
+        }
+
+
+        /*
+         * Descontamos el inventario.
+         */
+        for (Map.Entry<Integer, Integer> entry
+                : cantidades.entrySet()) {
+
+            Producto producto =
+                    productos.get(
+                            entry.getKey()
+                    );
+
+            producto.setStock(
+                    producto.getStock()
+                            - entry.getValue()
+            );
+
+            entityManager.merge(
+                    producto
+            );
+        }
+
+
+        pedido.setInventarioDescontado(
+                true
         );
-
 
         pedido.setInventarioActualizado(
                 true
@@ -506,66 +808,472 @@ public Response crearPedido(Pedido pedido) {
 
 
         entityManager.merge(
-                producto
+                pedido
         );
 
-        entityManager.merge(
-                pedido
+        entityManager.flush();
+
+
+        pedido.setItems(
+                items
         );
 
 
         return Response
-                .ok(pedido)
+                .ok(
+                        pedido
+                )
                 .build();
     }
 
 
     /* =========================================================
-       GENERAR CÓDIGO AMIGABLE
+       GUARDAR COMPROBANTE
        ========================================================= */
+
+    @PUT
+    @Path("/{id}/comprobante")
+    @Transactional
+    public Response guardarComprobante(
+            @PathParam("id") int id,
+            ComprobantePago datos) {
+
+        Pedido pedido =
+                entityManager.find(
+                        Pedido.class,
+                        id
+                );
+
+
+        if (pedido == null) {
+
+            return error(
+                    Response.Status.NOT_FOUND,
+                    "Pedido no encontrado"
+            );
+        }
+
+
+        if (datos == null ||
+                vacio(datos.getNombreArchivo()) ||
+                vacio(datos.getDatosBase64())) {
+
+            return error(
+                    Response.Status.BAD_REQUEST,
+                    "Debe adjuntar un comprobante válido"
+            );
+        }
+
+
+        List<ComprobantePago> existentes =
+                entityManager
+                        .createQuery(
+                                "SELECT c FROM ComprobantePago c "
+                                        + "WHERE c.pedidoId = :pedidoId",
+                                ComprobantePago.class
+                        )
+                        .setParameter(
+                                "pedidoId",
+                                id
+                        )
+                        .getResultList();
+
+
+        ComprobantePago comprobante;
+
+
+        if (existentes.isEmpty()) {
+
+            comprobante =
+                    new ComprobantePago();
+
+            comprobante.setPedidoId(
+                    id
+            );
+
+        } else {
+
+            comprobante =
+                    existentes.get(0);
+        }
+
+
+        comprobante.setNombreArchivo(
+                datos
+                        .getNombreArchivo()
+                        .trim()
+        );
+
+
+        comprobante.setTipoContenido(
+                vacio(
+                        datos.getTipoContenido()
+                )
+                        ? "application/octet-stream"
+                        : datos
+                                .getTipoContenido()
+                                .trim()
+        );
+
+
+        comprobante.setDatosBase64(
+                datos
+                        .getDatosBase64()
+                        .trim()
+        );
+
+
+        comprobante.setFechaCarga(
+                LocalDateTime
+                        .now()
+                        .toString()
+        );
+
+
+        if (comprobante.getId() == 0) {
+
+            entityManager.persist(
+                    comprobante
+            );
+
+        } else {
+
+            entityManager.merge(
+                    comprobante
+            );
+        }
+
+
+        pedido.setComprobanteAdjunto(
+                true
+        );
+
+
+        if ("PENDIENTE_PAGO".equalsIgnoreCase(
+                pedido.getEstado())) {
+
+            pedido.setEstado(
+                    "PAGO_REVISION"
+            );
+        }
+
+
+        entityManager.merge(
+                pedido
+        );
+
+        entityManager.flush();
+
+
+        return Response
+                .ok(
+                        comprobante
+                )
+                .build();
+    }
+
+
+    /* =========================================================
+       OBTENER COMPROBANTE
+       ========================================================= */
+
+    @GET
+    @Path("/{id}/comprobante")
+    public Response obtenerComprobante(
+            @PathParam("id") int id) {
+
+        Pedido pedido =
+                entityManager.find(
+                        Pedido.class,
+                        id
+                );
+
+
+        if (pedido == null) {
+
+            return error(
+                    Response.Status.NOT_FOUND,
+                    "Pedido no encontrado"
+            );
+        }
+
+
+        List<ComprobantePago> comprobantes =
+                entityManager
+                        .createQuery(
+                                "SELECT c FROM ComprobantePago c "
+                                        + "WHERE c.pedidoId = :pedidoId",
+                                ComprobantePago.class
+                        )
+                        .setParameter(
+                                "pedidoId",
+                                id
+                        )
+                        .getResultList();
+
+
+        if (comprobantes.isEmpty()) {
+
+            return error(
+                    Response.Status.NOT_FOUND,
+                    "El pedido no tiene comprobante adjunto"
+            );
+        }
+
+
+        return Response
+                .ok(
+                        comprobantes.get(0)
+                )
+                .build();
+    }
+
+
+    /* =========================================================
+       DATOS DE DESPACHO
+       ========================================================= */
+
+    @PUT
+    @Path("/{id}/despacho")
+    @Transactional
+    public Response actualizarDespacho(
+            @PathParam("id") int id,
+            Pedido datos) {
+
+        Pedido pedido =
+                entityManager.find(
+                        Pedido.class,
+                        id
+                );
+
+
+        if (pedido == null) {
+
+            return error(
+                    Response.Status.NOT_FOUND,
+                    "Pedido no encontrado"
+            );
+        }
+
+
+        if (!"DESPACHO".equalsIgnoreCase(
+                pedido.getModalidadEntrega())) {
+
+            return error(
+                    Response.Status.BAD_REQUEST,
+                    "El pedido no corresponde a modalidad DESPACHO"
+            );
+        }
+
+
+        pedido.setEmpresaTransporte(
+                limpiar(
+                        datos == null
+                                ? null
+                                : datos.getEmpresaTransporte()
+                )
+        );
+
+
+        pedido.setNumeroSeguimiento(
+                limpiar(
+                        datos == null
+                                ? null
+                                : datos.getNumeroSeguimiento()
+                )
+        );
+
+
+        pedido.setFechaEnvio(
+                limpiar(
+                        datos == null
+                                ? null
+                                : datos.getFechaEnvio()
+                )
+        );
+
+
+        entityManager.merge(
+                pedido
+        );
+
+        entityManager.flush();
+
+
+        pedido.setItems(
+                obtenerItems(
+                        id
+                )
+        );
+
+
+        return Response
+                .ok(
+                        pedido
+                )
+                .build();
+    }
+
+
+    /* =========================================================
+       UTILIDADES
+       ========================================================= */
+
+    private List<PedidoItem> obtenerItems(
+            int pedidoId) {
+
+        return entityManager
+                .createQuery(
+                        "SELECT i FROM PedidoItem i "
+                                + "WHERE i.pedidoId = :pedidoId "
+                                + "ORDER BY i.id",
+                        PedidoItem.class
+                )
+                .setParameter(
+                        "pedidoId",
+                        pedidoId
+                )
+                .getResultList();
+    }
+
+
+    private void completarItems(
+            List<Pedido> pedidos) {
+
+        for (Pedido pedido : pedidos) {
+
+            pedido.setItems(
+                    obtenerItems(
+                            pedido.getId()
+                    )
+            );
+        }
+    }
+
+
+    private boolean estadoValido(
+            String estado) {
+
+        return "PENDIENTE_PAGO".equals(estado)
+                || "PAGO_REVISION".equals(estado)
+                || "PAGADO".equals(estado)
+                || "RECHAZADO".equals(estado)
+                || "PREPARANDO".equals(estado)
+                || "LISTO_RETIRO".equals(estado)
+                || "DESPACHADO".equals(estado)
+                || "ENTREGADO".equals(estado)
+                || "CANCELADO".equals(estado);
+    }
+
+
+    private String normalizarModalidad(
+            String modalidad) {
+
+        if (modalidad == null) {
+            return null;
+        }
+
+
+        String valor =
+                modalidad
+                        .trim()
+                        .toUpperCase();
+
+
+        if ("RETIRO".equals(valor) ||
+                "DESPACHO".equals(valor)) {
+
+            return valor;
+        }
+
+
+        return null;
+    }
+
+
+    private boolean vacio(
+            String valor) {
+
+        return valor == null ||
+                valor.trim().isEmpty();
+    }
+
+
+    private String limpiar(
+            String valor) {
+
+        return valor == null
+                ? ""
+                : valor.trim();
+    }
+
 
     private String generarCodigoPedido(
             String cliente,
             int id) {
 
-        String primerNombre =
-                cliente
-                        .trim()
-                        .split("\\s+")[0];
+        String nombre =
+                cliente == null
+                        ? "PEDIDO"
+                        : cliente.trim();
 
 
-        primerNombre =
+        String primero =
+                nombre.contains(" ")
+                        ? nombre.substring(
+                                0,
+                                nombre.indexOf(' ')
+                        )
+                        : nombre;
+
+
+        primero =
                 Normalizer
                         .normalize(
-                                primerNombre,
+                                primero,
                                 Normalizer.Form.NFD
                         )
                         .replaceAll(
                                 "\\p{M}",
                                 ""
-                        );
-
-
-        primerNombre =
-                primerNombre
-                        .toUpperCase()
+                        )
                         .replaceAll(
-                                "[^A-Z0-9]",
+                                "[^A-Za-z0-9]",
                                 ""
-                        );
+                        )
+                        .toUpperCase();
 
 
-        if (primerNombre.isEmpty()) {
-
-            primerNombre =
-                    "PEDIDO";
+        if (primero.isEmpty()) {
+            primero = "PEDIDO";
         }
 
 
-        return String.format(
-                "%s-%06d",
-                primerNombre,
-                id
-        );
+        return primero
+                + "-"
+                + String.format(
+                        "%06d",
+                        id
+                );
+    }
+
+
+    private Response error(
+            Response.Status estado,
+            String mensaje) {
+
+        return Response
+                .status(
+                        estado
+                )
+                .entity(
+                        "{\"mensaje\":\""
+                                + mensaje.replace(
+                                        "\"",
+                                        "'"
+                                )
+                                + "\"}"
+                )
+                .build();
     }
 }

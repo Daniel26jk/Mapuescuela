@@ -51,11 +51,14 @@ services:
       DB_HOST: mysql
       DB_PORT: 3306
       DB_NAME: mapuescuela
+
       DB_USER: ${MYSQL_USER:-mapuescuela}
       DB_PASSWORD: ${MYSQL_PASSWORD:-mapuescuela123}
 
       FLOWABLE_TOKEN: ${FLOWABLE_TOKEN}
       FLOWABLE_PROCESS_KEY: ${FLOWABLE_PROCESS_KEY}
+      MAPUESCUELA_ADMIN_USER: ${MAPUESCUELA_ADMIN_USER:-admin}
+      MAPUESCUELA_ADMIN_PASSWORD: ${MAPUESCUELA_ADMIN_PASSWORD:-mapuescuela2026}
 
     ports:
       - "${APP_PORT:-8081}:8080"

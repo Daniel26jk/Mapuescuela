@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
+
     <meta
         name="viewport"
         content="width=device-width, initial-scale=1.0"
@@ -34,6 +35,7 @@
         <div class="estandarte-negro"></div>
     </aside>
 
+
     <header class="encabezado">
 
         <div class="franja-colores">
@@ -42,6 +44,7 @@
             <span class="color-verde"></span>
             <span class="color-rojo"></span>
         </div>
+
 
         <div class="encabezado-contenido">
 
@@ -67,11 +70,32 @@
 
             </div>
 
-            <div class="estado-sistema">
 
-                <span class="punto-online"></span>
+            <div class="acciones-cabecera">
 
-                Sistema activo
+                <span class="estado-sistema">
+
+                    <span class="punto-online"></span>
+
+                    Sesión activa
+
+                </span>
+
+
+                <button
+                    id="btnInicio"
+                    class="boton-secundario"
+                >
+                    Inicio
+                </button>
+
+
+                <button
+                    id="btnCerrarSesion"
+                    class="boton-secundario"
+                >
+                    Cerrar sesión
+                </button>
 
             </div>
 
@@ -79,14 +103,17 @@
 
     </header>
 
+
     <main class="contenedor">
+
+        <!-- BIENVENIDA -->
 
         <section class="bienvenida">
 
             <div>
 
                 <p class="etiqueta-superior">
-                    PANEL DE ADMINISTRACIÓN
+                    ADMINISTRACIÓN
                 </p>
 
                 <h2>
@@ -94,8 +121,8 @@
                 </h2>
 
                 <p>
-                    Administra productos, inventario
-                    y el seguimiento de los pedidos.
+                    Administra productos, inventario,
+                    pagos, pedidos y despachos.
                 </p>
 
             </div>
@@ -105,88 +132,59 @@
 
         <!-- RESUMEN -->
 
-        <section class="resumen">
+        <section class="resumen resumen-ampliado">
 
             <article class="tarjeta-resumen">
 
-                <span class="icono-resumen">
-                    📦
-                </span>
+                <span>Pedidos activos</span>
 
-                <div>
-
-                    <p>
-                        Pedidos activos
-                    </p>
-
-                    <strong id="totalActivos">
-                        0
-                    </strong>
-
-                </div>
+                <strong id="totalActivos">
+                    0
+                </strong>
 
             </article>
 
 
             <article class="tarjeta-resumen">
 
-                <span class="icono-resumen">
-                    ✓
-                </span>
+                <span>Completados</span>
 
-                <div>
-
-                    <p>
-                        Completados
-                    </p>
-
-                    <strong id="totalCompletados">
-                        0
-                    </strong>
-
-                </div>
+                <strong id="totalCompletados">
+                    0
+                </strong>
 
             </article>
 
 
             <article class="tarjeta-resumen">
 
-                <span class="icono-resumen">
-                    ✕
-                </span>
+                <span>Cancelados / Rechazados</span>
 
-                <div>
-
-                    <p>
-                        Cancelados / rechazados
-                    </p>
-
-                    <strong id="totalCancelados">
-                        0
-                    </strong>
-
-                </div>
+                <strong id="totalCancelados">
+                    0
+                </strong>
 
             </article>
 
 
             <article class="tarjeta-resumen">
 
-                <span class="icono-resumen">
-                    🛒
-                </span>
+                <span>Productos activos</span>
 
-                <div>
+                <strong id="totalProductos">
+                    0
+                </strong>
 
-                    <p>
-                        Productos activos
-                    </p>
+            </article>
 
-                    <strong id="totalProductosActivos">
-                        0
-                    </strong>
 
-                </div>
+            <article class="tarjeta-resumen">
+
+                <span>Stock bajo ≤ 5</span>
+
+                <strong id="totalStockBajo">
+                    0
+                </strong>
 
             </article>
 
@@ -212,8 +210,8 @@
                         </h3>
 
                         <p>
-                            Agrega productos y administra
-                            precio, descripción y stock.
+                            Crea y edita los productos
+                            disponibles en el catálogo.
                         </p>
 
                     </div>
@@ -225,6 +223,12 @@
 
             <form id="formProducto">
 
+                <input
+                    type="hidden"
+                    id="productoEditarId"
+                >
+
+
                 <div class="formulario-grid">
 
                     <div class="campo">
@@ -234,7 +238,6 @@
                         </label>
 
                         <input
-                            type="text"
                             id="nombreProducto"
                             required
                         >
@@ -244,14 +247,13 @@
 
                     <div class="campo">
 
-                        <label for="descripcionProducto">
-                            Descripción
+                        <label for="categoriaProducto">
+                            Categoría
                         </label>
 
                         <input
-                            type="text"
-                            id="descripcionProducto"
-                            required
+                            id="categoriaProducto"
+                            placeholder="Ej: Libros, juguetes, muebles"
                         >
 
                     </div>
@@ -264,8 +266,8 @@
                         </label>
 
                         <input
-                            type="number"
                             id="precioProducto"
+                            type="number"
                             min="0"
                             required
                         >
@@ -280,11 +282,40 @@
                         </label>
 
                         <input
-                            type="number"
                             id="stockProducto"
+                            type="number"
                             min="0"
                             required
                         >
+
+                    </div>
+
+
+                    <div class="campo campo-ancho">
+
+                        <label for="imagenProducto">
+                            URL de fotografía
+                        </label>
+
+                        <input
+                            id="imagenProducto"
+                            type="url"
+                            placeholder="https://..."
+                        >
+
+                    </div>
+
+
+                    <div class="campo campo-ancho">
+
+                        <label for="descripcionProducto">
+                            Descripción
+                        </label>
+
+                        <textarea
+                            id="descripcionProducto"
+                            rows="3"
+                        ></textarea>
 
                     </div>
 
@@ -294,21 +325,21 @@
                 <div class="acciones-formulario">
 
                     <button
-                        type="button"
-                        id="btnCancelarEdicion"
-                        class="boton boton-secundario"
-                        style="display: none;"
+                        type="submit"
+                        class="boton-principal"
+                        id="btnGuardarProducto"
                     >
-                        Cancelar edición
+                        Crear producto
                     </button>
 
 
                     <button
-                        type="submit"
-                        id="btnGuardarProducto"
-                        class="boton boton-principal"
+                        type="button"
+                        id="btnCancelarEdicion"
+                        class="boton-secundario"
+                        style="display:none;"
                     >
-                        + Agregar producto
+                        Cancelar edición
                     </button>
 
                 </div>
@@ -322,32 +353,25 @@
             ></div>
 
 
-            <div class="tabla-contenedor">
+            <div class="tabla-responsive">
 
-                <table>
+                <table class="tabla-datos">
 
                     <thead>
 
                         <tr>
                             <th>ID</th>
                             <th>Producto</th>
+                            <th>Categoría</th>
                             <th>Precio</th>
                             <th>Stock</th>
                             <th>Estado</th>
-                            <th>Gestión</th>
+                            <th>Acciones</th>
                         </tr>
 
                     </thead>
 
-                    <tbody id="tablaProductos">
-
-                        <tr>
-                            <td colspan="6">
-                                Cargando productos...
-                            </td>
-                        </tr>
-
-                    </tbody>
+                    <tbody id="tablaProductos"></tbody>
 
                 </table>
 
@@ -371,12 +395,12 @@
                     <div>
 
                         <h3>
-                            Buscar pedidos
+                            Gestión de pedidos
                         </h3>
 
                         <p>
-                            Busca por código, cliente,
-                            producto o estado.
+                            Busca y administra los pedidos
+                            registrados en el sistema.
                         </p>
 
                     </div>
@@ -385,9 +409,8 @@
 
 
                 <button
-                    type="button"
                     id="btnActualizar"
-                    class="boton boton-secundario"
+                    class="boton-secundario"
                 >
                     ↻ Actualizar
                 </button>
@@ -402,9 +425,9 @@
                 </span>
 
                 <input
-                    type="text"
                     id="buscarPedido"
-                    placeholder="Buscar pedido..."
+                    type="text"
+                    placeholder="Buscar código, cliente, correo, producto o estado..."
                 >
 
             </div>
@@ -431,7 +454,8 @@
                         </h3>
 
                         <p>
-                            Pedidos actualmente en proceso.
+                            Pedidos que actualmente se
+                            encuentran en proceso.
                         </p>
 
                     </div>
@@ -441,19 +465,20 @@
             </div>
 
 
-            <div class="tabla-contenedor">
+            <div class="tabla-responsive">
 
-                <table>
+                <table class="tabla-datos tabla-pedidos">
 
                     <thead>
 
                         <tr>
                             <th>Código</th>
                             <th>Cliente</th>
-                            <th>Producto</th>
-                            <th>Cantidad</th>
+                            <th>Productos</th>
+                            <th>Total</th>
                             <th>Entrega</th>
                             <th>Estado</th>
+                            <th>Comprobante</th>
                             <th>Gestión</th>
                         </tr>
 
@@ -498,19 +523,21 @@
             </div>
 
 
-            <div class="tabla-contenedor">
+            <div class="tabla-responsive">
 
-                <table>
+                <table class="tabla-datos tabla-pedidos">
 
                     <thead>
 
                         <tr>
                             <th>Código</th>
                             <th>Cliente</th>
-                            <th>Producto</th>
-                            <th>Cantidad</th>
+                            <th>Productos</th>
+                            <th>Total</th>
                             <th>Entrega</th>
                             <th>Estado</th>
+                            <th>Comprobante</th>
+                            <th>Detalle</th>
                         </tr>
 
                     </thead>
@@ -543,7 +570,8 @@
                         </h3>
 
                         <p>
-                            Pedidos entregados y finalizados.
+                            Pedidos finalizados y entregados
+                            correctamente.
                         </p>
 
                     </div>
@@ -553,19 +581,21 @@
             </div>
 
 
-            <div class="tabla-contenedor">
+            <div class="tabla-responsive">
 
-                <table>
+                <table class="tabla-datos tabla-pedidos">
 
                     <thead>
 
                         <tr>
                             <th>Código</th>
                             <th>Cliente</th>
-                            <th>Producto</th>
-                            <th>Cantidad</th>
+                            <th>Productos</th>
+                            <th>Total</th>
                             <th>Entrega</th>
                             <th>Estado</th>
+                            <th>Comprobante</th>
+                            <th>Detalle</th>
                         </tr>
 
                     </thead>
@@ -578,20 +608,132 @@
 
         </section>
 
+
+        <!-- DETALLE PEDIDO -->
+
+        <section
+            id="panelDetallePedido"
+            class="panel"
+            style="display:none;"
+        >
+
+            <div class="panel-titulo">
+
+                <div>
+
+                    <span class="numero-seccion">
+                        06
+                    </span>
+
+                    <div>
+
+                        <h3>
+                            Detalle y despacho
+                        </h3>
+
+                        <p id="tituloDetallePedido">
+                            Selecciona un pedido.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <button
+                    id="btnCerrarDetalle"
+                    class="boton-secundario"
+                >
+                    Cerrar
+                </button>
+
+            </div>
+
+
+            <div
+                id="detallePedidoAdmin"
+                class="detalle-admin-grid"
+            ></div>
+
+
+            <form
+                id="formDespacho"
+                style="display:none;"
+            >
+
+                <input
+                    type="hidden"
+                    id="despachoPedidoId"
+                >
+
+
+                <div class="formulario-grid">
+
+                    <div class="campo">
+
+                        <label for="empresaTransporte">
+                            Empresa de transporte
+                        </label>
+
+                        <input
+                            id="empresaTransporte"
+                            placeholder="Ej: Chilexpress / Voluntario"
+                        >
+
+                    </div>
+
+
+                    <div class="campo">
+
+                        <label for="numeroSeguimiento">
+                            N° seguimiento
+                        </label>
+
+                        <input
+                            id="numeroSeguimiento"
+                        >
+
+                    </div>
+
+
+                    <div class="campo">
+
+                        <label for="fechaEnvio">
+                            Fecha de envío
+                        </label>
+
+                        <input
+                            id="fechaEnvio"
+                            type="date"
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <div class="acciones-formulario">
+
+                    <button
+                        type="submit"
+                        class="boton-principal"
+                    >
+                        Guardar datos de despacho
+                    </button>
+
+                </div>
+
+
+                <div
+                    id="mensajeDespacho"
+                    class="mensaje"
+                ></div>
+
+            </form>
+
+        </section>
+
     </main>
-
-
-    <footer>
-
-        <strong>
-            Mapuescuela
-        </strong>
-
-        <span>
-            Educa-acción para el buen vivir
-        </span>
-
-    </footer>
 
 
     <script src="app.js"></script>
